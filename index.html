@@ -418,7 +418,7 @@ body[data-view="quiz"] .toast{bottom:calc(20px + env(safe-area-inset-bottom))}
         <span class="box"><span data-ico="check"></span></span>
         <span>Li e concordo com os Termos de Uso e a Política de Privacidade.</span>
       </label>
-      <button class="btn btn-ink btn-block" type="button" id="termsOk" disabled>Entrar</button>
+      <button class="btn btn-ink btn-block" type="button" id="termsOk" disabled>Aceitar e continuar</button>
       <button class="btn-text" type="button" id="termsNo">Não concordo</button>
     </div>
     <div id="termsDeclined" hidden>
@@ -685,7 +685,7 @@ body[data-view="quiz"] .toast{bottom:calc(20px + env(safe-area-inset-bottom))}
     var m = modById(id);
     if (!m) return;
     if (!canOpen(m)) { openPay('module'); return; }
-    showQuiz(id, 1, true);
+    requireTerms(function () { showQuiz(id, 1, true); });
   }
 
   function showQuiz(id, page, push) {
@@ -955,7 +955,8 @@ body[data-view="quiz"] .toast{bottom:calc(20px + env(safe-area-inset-bottom))}
   document.addEventListener('keydown', function (e) {
     var L = $('.layer:not([hidden])');
     if (!L) return;
-    if (e.key === 'Escape' && L.id === 'payLayer') { closeLayer('payLayer'); return; }
+        if (e.key === 'Escape' && L.id === 'payLayer') { closeLayer('payLayer'); return; }
+    if (e.key === 'Escape' && L.id === 'termsLayer') { declineTerms(); return; }
     if (e.key === 'Tab') {
       var f = focusables($('.sheet', L));
       if (!f.length) return;
@@ -1004,7 +1005,7 @@ body[data-view="quiz"] .toast{bottom:calc(20px + env(safe-area-inset-bottom))}
       '<button class="btn btn-line" type="button" id="codeBtn">Validar código</button></div>' +
       '<p class="err" id="codeErr" role="alert" hidden></p></div>';
   }
-  function openPay(reason) { renderPay(reason); openLayer('payLayer'); }
+  function openPay(reason) { requireTerms(function () { renderPay(reason); openLayer('payLayer'); }); }
   function closePay() { closeLayer('payLayer'); }
 
   function showCodeError(msg) {
@@ -1043,21 +1044,31 @@ body[data-view="quiz"] .toast{bottom:calc(20px + env(safe-area-inset-bottom))}
     toast('Acesso removido deste aparelho.');
   }
 
-  function initTerms() {
-    if (sget('ep.terms') === '1') return;
-    var app = $('#app'), tab = $('#tabbar');
-    app.inert = true; tab.inert = true;
+  var termsNext = null;
+  function termsAccepted() { return sget('ep.terms') === '1'; }
+  function requireTerms(fn) {
+    if (termsAccepted()) { fn(); return; }
+    termsNext = fn;
+    $('#termsCheck').checked = false;
+    $('#termsOk').disabled = true;
     openLayer('termsLayer');
+  }
+  function declineTerms() {
+    termsNext = null;
+    closeLayer('termsLayer');
+    toast('Para estudar, é preciso aceitar os termos.');
+  }
+  function initTerms() {
     var chk = $('#termsCheck'), ok = $('#termsOk');
     chk.addEventListener('change', function () { ok.disabled = !chk.checked; });
     ok.addEventListener('click', function () {
       if (!chk.checked) return;
       sset('ep.terms', '1');
-      app.inert = false; tab.inert = false;
+      var fn = termsNext; termsNext = null;
       closeLayer('termsLayer');
+      if (fn) setTimeout(fn, REDUCED ? 0 : 220);
     });
-    $('#termsNo').addEventListener('click', function () { $('#termsMain').hidden = true; $('#termsDeclined').hidden = false; $('#termsBack').focus(); });
-    $('#termsBack').addEventListener('click', function () { $('#termsDeclined').hidden = true; $('#termsMain').hidden = false; chk.focus(); });
+    $('#termsNo').addEventListener('click', declineTerms);
   }
 
   var toastT;
