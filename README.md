@@ -1,4 +1,4 @@
-# EnglishPro
+# EnglishDuo
 
 A mobile-first English quiz app with explanations in Portuguese. Try a free sample, then unlock the full question bank and recorded lessons.
 
