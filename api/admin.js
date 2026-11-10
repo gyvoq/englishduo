@@ -100,6 +100,7 @@ export default wrap(async (req, res) => {
     const pass = process.env.ADMIN_PASSWORD || '';
     if (pass.length < 8) return send(res, 500, { error: 'Defina ADMIN_PASSWORD (mín. 8 caracteres) na Vercel.' });
     if (!(await rateLimit('admin:' + clientIp(req), 8, 900))) return send(res, 429, { error: 'Muitas tentativas. Espere 15 minutos.' });
+    if (!(await rateLimit('admin:all', 40, 3600))) return send(res, 429, { error: 'Painel bloqueado por excesso de tentativas. Espere 1 hora.' });
     if (!safeEqual(String(b.password || ''), pass)) return send(res, 401, { error: 'Senha incorreta.' });
     startAdmin(res);
     return send(res, 200, { ok: true });
