@@ -756,7 +756,7 @@
     return '<section class="lv-sec lchat-sec"><h2>Dúvidas da aula</h2>' +
       '<p class="lchat-sub">Converse com a turma sobre esta aula. Seja gentil: mensagens ofensivas são bloqueadas.</p>' +
       '<div class="lchat"><div class="chat-list" id="chatList" aria-live="polite"><div class="loadbox"><span class="spin"></span><span>Carregando mensagens…</span></div></div>' +
-      '<form class="chat-form" id="chatForm" autocomplete="off"><textarea id="chatInput" rows="1" maxlength="500" placeholder="Escreva sua dúvida" aria-label="Mensagem"></textarea>' +
+      '<form class="chat-form" id="chatForm" autocomplete="off"><textarea id="chatInput" rows="1" maxlength="300" placeholder="Escreva sua dúvida" aria-label="Mensagem"></textarea>' +
       '<button class="btn btn-red" type="submit" id="chatSend" aria-label="Enviar">' + icon('paper-plane-right') + '</button></form>' +
       '<p class="chat-err" id="chatErr" role="alert" hidden></p></div></section>';
   }
