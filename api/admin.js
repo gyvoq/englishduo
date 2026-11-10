@@ -2,16 +2,17 @@ import { wrap, send, body, clientIp } from '../lib/http.js';
 import { redis, pipeline, rateLimit } from '../lib/redis.js';
 import { content } from '../lib/content.js';
 import { isAdmin, startAdmin, endAdmin, safeEqual } from '../lib/session.js';
-import { genKey, normKey, getLicense, saveLicense, createLicense, listLicenses, deleteLicense, statusOf, dayStart, dayEnd } from '../lib/licenses.js';
+import { genKey, normKey, getLicense, saveLicense, createLicense, listLicenses, deleteLicense, statusOf, dayStart, dayEnd, members } from '../lib/licenses.js';
 
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 
 function row(l) {
+  const ms = members(l);
   return {
-    key: l.key, status: statusOf(l), desc: l.desc || '', name: l.name || '',
+    key: l.key, status: statusOf(l), desc: l.desc || '', names: ms.map((m) => m.name),
     createdAt: l.createdAt, activatedAt: l.activatedAt || null, expiresAt: l.expiresAt || null,
     months: l.months || null, start: l.start || null, end: l.end || null,
-    devices: l.devices || 1, used: (l.deviceIds || []).length
+    devices: l.devices || 1, used: ms.length
   };
 }
 
@@ -36,7 +37,7 @@ const actions = {
     const keys = [];
     let tries = 0;
     while (keys.length < qty && tries++ < qty * 5) {
-      const lic = { key: genKey(), createdAt: Date.now(), months, start, end, devices, desc, deviceIds: [] };
+      const lic = { key: genKey(), createdAt: Date.now(), months, start, end, devices, desc, members: [] };
       if (await createLicense(lic)) keys.push(lic.key);
     }
     return { keys };
@@ -53,7 +54,8 @@ const actions = {
   async resetDevices(b) {
     const l = await getLicense(normKey(b.key));
     if (!l) return { status: 404, error: 'Chave não encontrada.' };
-    l.deviceIds = [];
+    l.members = [];
+    delete l.deviceIds;
     await saveLicense(l);
     return { ok: true };
   },
@@ -61,7 +63,8 @@ const actions = {
   async delete(b) {
     const k = normKey(b.key);
     if (!k) return { status: 400, error: 'Chave inválida.' };
-    await deleteLicense(k);
+    const l = await getLicense(k);
+    await deleteLicense(k, l ? members(l).map((m) => m.id) : []);
     return { ok: true };
   },
 
