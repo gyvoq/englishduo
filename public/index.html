@@ -49,7 +49,6 @@
     <section id="quizView" hidden></section>
     <section id="coursesView" hidden></section>
     <section id="lessonView" hidden></section>
-    <section id="chatView" hidden></section>
     <section id="progressView" hidden></section>
   </main>
 </div>
@@ -57,12 +56,25 @@
 <nav class="tabbar" id="tabbar" aria-label="Navegação principal">
   <button class="tab" type="button" data-tab="home"><span data-ico="house"></span><span>Início</span></button>
   <button class="tab" type="button" data-tab="courses"><span data-ico="play-circle"></span><span>Aulas</span></button>
-  <button class="tab" type="button" data-tab="chat"><span data-ico="chat-circle-dots"></span><span>Chat</span></button>
   <button class="tab" type="button" data-tab="progress"><span data-ico="chart-bar"></span><span>Progresso</span></button>
   <button class="tab" type="button" data-tab="access"><span data-ico="user-circle"></span><span id="accTabLabel">Entrar</span></button>
 </nav>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="pdfv" id="pdfLayer" role="dialog" aria-modal="true" aria-labelledby="pdfTitle" hidden>
+  <div class="pdfv-bar">
+    <button class="iconbtn" type="button" id="pdfClose" data-pdfv="close" aria-label="Fechar"><span data-ico="x"></span></button>
+    <div class="pdfv-t"><strong id="pdfTitle"></strong><span id="pdfInfo"></span></div>
+    <div class="pdfv-zoom">
+      <button class="iconbtn" type="button" data-pdfv="out" aria-label="Diminuir zoom">−</button>
+      <span id="pdfZoom">100%</span>
+      <button class="iconbtn" type="button" data-pdfv="in" aria-label="Aumentar zoom">+</button>
+    </div>
+    <button class="btn btn-red btn-sm pdfv-dl" type="button" data-pdfv="dl" aria-label="Baixar PDF"><span data-ico="download-simple"></span><span class="pdfv-dl-t">Baixar</span></button>
+  </div>
+  <div class="pdfv-body" id="pdfBody"></div>
+</div>
 
 <div class="layer" id="payLayer" hidden>
   <div class="scrim" data-close></div>
