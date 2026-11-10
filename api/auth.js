@@ -48,8 +48,8 @@ async function login(req, res) {
   delete lic.name;
   await saveLicense(lic);
 
-  startSession(res, lic, device, name);
-  send(res, 200, { ok: true, me: meOf({ key: lic.key, name, exp: lic.expiresAt }) });
+  const st2 = startSession(res, lic, device, name);
+  send(res, 200, { ok: true, did: device, st: st2, me: meOf({ key: lic.key, name, exp: lic.expiresAt }) });
 }
 
 const QID = /^[a-z0-9-]{3,64}$/;
