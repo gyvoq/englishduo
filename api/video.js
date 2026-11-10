@@ -1,4 +1,5 @@
 import { wrap, send } from '../lib/http.js';
+import { rateLimit } from '../lib/redis.js';
 import { student } from '../lib/session.js';
 import { content, videoToken, readVideoToken } from '../lib/content.js';
 
@@ -17,7 +18,7 @@ export default wrap(async (req, res) => {
   if (q.t) {
     const tok = readVideoToken(q.t);
     const st = await student(req, res);
-    if (!tok || !st || st.key !== tok.k) return errorPage(res, 'Sessão expirada. Volte e abra a aula de novo.');
+    if (!tok || !st || st.key !== tok.k || st.device !== tok.d) return errorPage(res, 'Sessão expirada. Volte e abra a aula de novo.');
     const l = content().lessons[tok.l];
     if (!l || !l.video) return errorPage(res, 'Falha ao carregar vídeo.');
     res.statusCode = 302;
@@ -30,8 +31,9 @@ export default wrap(async (req, res) => {
   // 1) O app pede um endereço temporário para a aula.
   const st = await student(req, res);
   if (!st) return send(res, 401, { error: 'Entre com sua chave para assistir.' });
+  if (!(await rateLimit('vid:' + st.key + ':' + st.device, 120, 600))) return send(res, 429, { error: 'Muitas aulas abertas em pouco tempo. Espere alguns minutos.' });
   const l = content().lessons[String(q.l || '')];
   if (!l) return send(res, 404, { error: 'Aula não encontrada.' });
   if (!l.video) return send(res, 200, { src: null });
-  send(res, 200, { src: '/api/video?t=' + videoToken(l.id, st.key) });
+  send(res, 200, { src: '/api/video?t=' + videoToken(l.id, st.key, st.device) });
 });
