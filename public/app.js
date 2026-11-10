@@ -481,6 +481,7 @@
 
   // ---------- aulas ----------
   function lessonCount() { return LESSON_LIST.length; }
+  function previewCount() { return LESSON_LIST.filter(function (l) { return l.preview; }).length; }
 
   function courseAccessHTML() {
     if (S.unlocked) {
@@ -489,13 +490,16 @@
     }
     return '<button class="video-card locked" type="button" data-pay="video" aria-label="Assistir às aulas, bloqueado">' +
       '<span class="video-ico">' + icon('play-circle') + '</span>' +
-      '<span class="video-card-body"><span class="video-card-title">Assistir às aulas</span><span class="video-card-sub">Disponível no acesso completo</span></span>' +
+      '<span class="video-card-body"><span class="video-card-title">Assistir às aulas</span><span class="video-card-sub">' + (previewCount() ? previewCount() + ' ' + plural(previewCount(), 'aula com prévia grátis', 'aulas com prévia grátis') + ' · vídeos no acesso completo' : 'Disponível no acesso completo') + '</span></span>' +
       '<span class="video-state">' + icon('lock-fill') + '</span></button>';
   }
 
   function lessonRowHTML(l) {
     var kind = l.kind === 'pdf' ? 'Material em PDF' : 'Vídeo-aula';
-    if (S.unlocked && l.pdfs && l.pdfs.length && l.kind !== 'pdf') kind += ' + PDF';
+    if ((S.unlocked || l.preview) && l.pdfs && l.pdfs.length && l.kind !== 'pdf') kind += ' + PDF';
+    if (!S.unlocked && l.preview) {
+      return '<li><button class="lesson-row" type="button" data-lesson="' + esc(l.id) + '"><span class="lesson-n">' + l.i + '</span><span class="lesson-t">' + esc(l.title) + '<small>Prévia grátis · ' + kind + '</small></span><span class="lesson-i">' + icon('arrow-right') + '</span></button></li>';
+    }
     if (!S.unlocked) {
       return '<li><button class="lesson-row locked" type="button" data-pay="video"><span class="lesson-n">' + l.i + '</span><span class="lesson-t">' + esc(l.title) + '<small>' + kind + '</small></span><span class="lesson-i">' + icon('lock-fill') + '</span></button></li>';
     }
@@ -562,7 +566,8 @@
   function showLesson(id) {
     var l = LESSONS[id];
     if (!l) return;
-    if (!S.unlocked) { openPay('video'); return; }
+    var pv = !S.unlocked;
+    if (pv && !l.preview) { openPay('video'); return; }
     stopPlayer();
     S.lesson = id;
     openCourse = l.n;
@@ -571,7 +576,9 @@
     var idx = LESSON_LIST.indexOf(l), prev = LESSON_LIST[idx - 1], next = LESSON_LIST[idx + 1];
 
     var player;
-    if (l.kind === 'pdf') {
+    if (pv && l.kind !== 'pdf') {
+      player = '<div class="player player-pdf">' + icon('lock-fill') + '<strong>Vídeo disponível no acesso completo</strong><span>Esta é uma prévia da aula. Libere o acesso para assistir.</span><button class="btn btn-red btn-sm" type="button" data-pay="video">Liberar acesso</button></div>';
+    } else if (l.kind === 'pdf') {
       player = '<div class="player player-pdf">' + icon('file-pdf') + '<strong>Esta aula é um material em PDF</strong><span>Abra o material abaixo para estudar.</span></div>';
     } else {
       player = '<div class="player-wrap"><div class="player" id="player"><div class="player-load"><span class="spin"></span><span>Carregando vídeo…</span></div></div></div>';
@@ -579,7 +586,7 @@
     var mats = (l.pdfs || []).map(function (p) {
       return '<div class="mat"><button class="mat-open" type="button" data-pdfview="' + esc(p.id) + '" data-title="' + esc(p.name) + '" data-sub="' + esc(l.title) + '">' +
         '<span class="mat-ico">' + icon('file-pdf') + '</span><span class="mat-body"><strong>' + esc(p.name) + '</strong><span>Toque para ver no site</span></span></button>' +
-        '<button class="mat-dl" type="button" data-pdfdl="' + esc(p.id) + '" aria-label="Baixar ' + esc(p.name) + '">' + icon('download-simple') + '</button></div>';
+        (pv ? '' : '<button class="mat-dl" type="button" data-pdfdl="' + esc(p.id) + '" aria-label="Baixar ' + esc(p.name) + '">' + icon('download-simple') + '</button>') + '</div>';
     }).join('');
     var desc = l.desc || (c && c.goal) || '';
 
@@ -589,7 +596,7 @@
       '<div class="lv-head"><h1>' + esc(l.title) + '</h1></div>' + player +
       '<section class="lv-sec"><h2>Sobre a aula</h2><p>' + (desc ? esc(desc) : 'Assista à aula e use o material de apoio para praticar.') + '</p></section>' +
       '<section class="lv-sec"><h2>Material de apoio</h2>' + (mats ? '<div class="mats">' + mats + '</div>' : '<p class="none">Esta aula não tem material em PDF.</p>') + '</section>' +
-      chatHTML() +
+      (pv ? '<section class="lv-sec"><h2>Dúvidas da aula</h2><p class="none">O chat da turma é do acesso completo.</p></section>' : chatHTML()) +
       '<nav class="lv-nav">' +
       (prev ? '<button class="btn btn-line" type="button" data-lesson="' + esc(prev.id) + '">' + icon('caret-left') + '<span>Anterior</span></button>' : '<span></span>') +
       (next ? '<button class="btn btn-ink" type="button" data-lesson="' + esc(next.id) + '"><span>Próxima aula</span>' + icon('caret-right') + '</button>' : '<span></span>') +
@@ -597,8 +604,8 @@
 
     if (S.view !== 'lesson') pushHist();
     setView('lesson');
-    if (l.kind !== 'pdf') loadVideo(l);
-    chatStart(l.id);
+    if (!pv && l.kind !== 'pdf') loadVideo(l);
+    if (!pv) chatStart(l.id);
   }
 
   function playerFail(box, title, sub) {
