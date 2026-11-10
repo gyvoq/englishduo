@@ -323,7 +323,6 @@ body[data-view="quiz"] .toast{bottom:calc(20px + env(safe-area-inset-bottom))}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;animation-delay:0s!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
 
-/* ===== loading ===== */
 .spin{display:inline-block;width:20px;height:20px;border:2.5px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite;flex:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 .btn.loading{pointer-events:none;opacity:.85}
@@ -340,7 +339,6 @@ body[data-view="quiz"] .toast{bottom:calc(20px + env(safe-area-inset-bottom))}
 .boot-err h2{font-size:1.5rem;letter-spacing:-.03em;font-weight:800;margin-bottom:6px}
 .boot-err p{color:var(--ink-2);margin-bottom:20px}
 
-/* ===== aulas ===== */
 .lessons{list-style:none;padding:0;margin:4px 0 0;display:grid;gap:8px}
 .lesson-row{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--paper);text-align:left;transition:border-color .15s,transform .12s var(--ease)}
 @media(hover:hover){.lesson-row:hover{border-color:var(--ink)}}
@@ -359,7 +357,6 @@ body[data-view="quiz"] .toast{bottom:calc(20px + env(safe-area-inset-bottom))}
 .hello strong{display:block;letter-spacing:-.01em}
 .hello span{font-size:.875rem;color:var(--ink-2)}
 
-/* ===== aula aberta ===== */
 #lessonView{max-width:820px;margin-inline:auto}
 .lv-head{padding:18px 0 14px}
 .lv-head .c-meta{margin-bottom:6px}
@@ -386,7 +383,6 @@ body[data-view="quiz"] .toast{bottom:calc(20px + env(safe-area-inset-bottom))}
 .lv-nav .btn span{overflow:hidden;text-overflow:ellipsis}
 .none{color:var(--ink-2);font-size:.9375rem}
 
-/* ===== conta / login ===== */
 .acc{display:flex;align-items:center;gap:12px;margin:18px 0 22px}
 .acc-av{display:grid;place-items:center;width:52px;height:52px;border-radius:var(--r-pill);background:var(--red);color:#fff;font-weight:800;font-size:1.25rem;flex:none}
 .acc strong{display:block;font-size:1.125rem;letter-spacing:-.02em}
@@ -404,7 +400,6 @@ body[data-view="lesson"] .topbar{display:none}
 body[data-view="chat"] .toast{bottom:calc(var(--tab-h) + 84px + env(safe-area-inset-bottom))}
 @media(min-width:900px){body[data-view="chat"] .toast{bottom:180px}}
 
-/* ===== material ===== */
 .mats{display:grid;gap:10px}
 .mat{display:flex;align-items:center;gap:8px;padding:6px 8px 6px 6px;border:1.5px solid var(--line);border-radius:var(--r-lg);transition:border-color .15s}
 @media(hover:hover){.mat:hover{border-color:var(--ink)}}
@@ -420,7 +415,6 @@ body[data-view="chat"] .toast{bottom:calc(var(--tab-h) + 84px + env(safe-area-in
 .mat-dl.busy svg{display:none}
 .mat-dl.busy::after{content:"";width:18px;height:18px;border:2.5px solid #fff;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
 
-/* ===== leitor de PDF ===== */
 .pdfv{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;background:#E9E9E9}
 .pdfv[hidden]{display:none!important}
 .pdfv-bar{display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) 8px max(10px,env(safe-area-inset-left));background:var(--paper);border-bottom:1px solid var(--line)}
@@ -440,7 +434,6 @@ body[data-view="chat"] .toast{bottom:calc(var(--tab-h) + 84px + env(safe-area-in
 @media(max-width:479px){.pdfv-dl{width:44px;padding:0}.pdfv-dl-t{display:none}.pdfv-zoom span{min-width:38px}}
 @media(max-width:399px){.pdfv-zoom span{display:none}.pdfv-zoom .iconbtn{width:36px}}
 
-/* ===== chat da aula ===== */
 .lchat-sub{font-size:.9375rem;margin-bottom:12px}
 .lchat{border:1.5px solid var(--line);border-radius:var(--r-lg);overflow:hidden;background:var(--paper)}
 .lchat .chat-list{max-height:min(420px,55dvh);min-height:140px;overflow-y:auto;overscroll-behavior:contain;padding:14px;display:flex;flex-direction:column;gap:10px;background:#FAFAFA}
@@ -464,7 +457,6 @@ body[data-view="chat"] .toast{bottom:calc(var(--tab-h) + 84px + env(safe-area-in
 .chat-err svg.ico{width:18px;height:18px;flex:none}
 .lv-nav{margin-top:24px}
 
-/* ===== ajustes de celular ===== */
 @media(max-width:479px){
   .hero{padding:20px 0 14px;gap:20px}
   .lv-head{padding:14px 0 12px}
@@ -484,9 +476,7 @@ body[data-view="chat"] .toast{bottom:calc(var(--tab-h) + 84px + env(safe-area-in
 input,textarea,select{font-size:16px}
 .redeem-row input,.name-step input,.search input{font-size:16px}
 
-/* ===== player no celular ===== */
 .player-wrap{position:relative}
-/* No celular o player do Drive põe os controles embaixo do vídeo: o quadro precisa ser mais alto que 16:9. */
 @media(max-width:719px){
   .player-wrap{margin-inline:calc(var(--gx) * -1)}
   .player-wrap .player{border-radius:0;aspect-ratio:auto;height:calc(56.25vw + 170px);max-height:82dvh}
