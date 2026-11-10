@@ -12,7 +12,7 @@ const SHOW = 100;   // mensagens enviadas ao app
 export default wrap(async (req, res) => {
   const st = await student(req, res);
   if (!st) return send(res, 401, { error: 'O chat é exclusivo para alunos.' });
-  const me = shortHash(st.key);
+  const me = shortHash(st.key + '|' + st.device);
 
   if (req.method === 'GET') {
     const l = String((req.query && req.query.l) || '');
