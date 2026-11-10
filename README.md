@@ -21,3 +21,7 @@ Paid content (questions, lesson links and PDFs) is stored encrypted in the repos
 ## Editing content
 
 Put `content.json` and the PDFs in `private/` (this folder never goes to GitHub) and run `CONTENT_KEY=... npm run build:content`.
+
+## Legal
+
+Termos de Uso e Política de Privacidade (LGPD) ficam em `public/index.html`, na tela "Antes de começar", e precisam ser aceitos antes do uso. Se mudar o que o app coleta ou os provedores, atualize esse texto.
