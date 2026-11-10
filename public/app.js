@@ -312,7 +312,7 @@
     var m = modById(id);
     if (!m) return;
     if (!canOpen(m)) { openPay('module'); return; }
-    requireTerms(function () { showQuiz(id, 1, true); });
+    showQuiz(id, 1, true);
   }
 
   function showQuiz(id, page, push) {
@@ -877,7 +877,7 @@
     L.classList.remove('show');
     setTimeout(function () {
       L.hidden = true;
-      document.body.classList.remove('lock');
+      if (!document.querySelector('.layer:not([hidden])')) document.body.classList.remove('lock');
       if (lastFocus && lastFocus.focus && document.contains(lastFocus)) { try { lastFocus.focus({ preventScroll: true }); } catch (e) { } }
     }, REDUCED ? 0 : 200);
   }
@@ -946,7 +946,7 @@
   function openPay(reason) {
     if (!S.ready) return;
     var go = function () { renderPay(reason); openLayer('payLayer'); };
-    if (S.unlocked) go(); else requireTerms(go);
+    go();
   }
   function closePay() { closeLayer('payLayer'); }
 
@@ -959,6 +959,7 @@
   function setBusy(btn, on) { if (!btn) return; btn.classList.toggle('loading', on); btn.disabled = on; }
 
   function tryCode() {
+    if (!termsAccepted()) { requireTerms(tryCode); return; }
     var i = $('#codeInput'), v = i.value.trim();
     var step = $('#nameStep'), nameIn = $('#nameInput');
     var askingName = step && !step.hidden;
@@ -1020,7 +1021,7 @@
   function declineTerms() {
     termsNext = null;
     closeLayer('termsLayer');
-    toast('Para estudar, é preciso aceitar os termos.');
+    toast('Para ativar sua chave, é preciso aceitar os termos.');
   }
   function initTerms() {
     var chk = $('#termsCheck'), ok = $('#termsOk');
