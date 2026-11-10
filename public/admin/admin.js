@@ -312,14 +312,14 @@
     api('chatList').then(function (r) {
       var msgs = r.msgs || [];
       box.innerHTML = msgs.length ? msgs.map(function (m) {
-        return '<div class="chat-row"><div class="cm"><b>' + esc(m.n) + '</b><time>' + fmtTime(m.ts) + '</time><p>' + esc(m.t) + '</p></div>' +
-          '<button class="act act-delete" data-click="delMsg" data-args=\'["' + esc(m.id) + '","$el"]\'>Apagar</button></div>';
-      }).join('') : '<div class="empty">Nenhuma mensagem no chat.</div>';
+        return '<div class="chat-row"><div class="cm"><b>' + esc(m.n) + '</b><time>' + fmtTime(m.ts) + '</time><span class="lt">' + esc(m.lt) + '</span><p>' + esc(m.t) + '</p></div>' +
+          '<button class="act act-delete" data-click="delMsg" data-args=\'["' + esc(m.l) + '","' + esc(m.id) + '","$el"]\'>Apagar</button></div>';
+      }).join('') : '<div class="empty">Nenhuma mensagem nas aulas.</div>';
     }).catch(function (e) { if (!guard(e)) box.innerHTML = '<div class="empty">' + esc(e.message) + '</div>'; });
   };
-  H.delMsg = function (id, el) {
+  H.delMsg = function (l, id, el) {
     busy(el, true, '');
-    api('chatDelete', { id: id }).then(function () {
+    api('chatDelete', { l: l, id: id }).then(function () {
       var row = el.closest('.chat-row'); if (row) row.remove();
       toast('Mensagem apagada.');
     }).catch(function (e) { busy(el, false); guard(e); });
