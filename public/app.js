@@ -567,9 +567,7 @@
     if (l.kind === 'pdf') {
       player = '<div class="player player-pdf">' + icon('file-pdf') + '<strong>Esta aula é um material em PDF</strong><span>Abra o material abaixo para estudar.</span></div>';
     } else {
-      player = '<div class="player-wrap" id="playerWrap"><div class="player" id="player"><div class="player-load"><span class="spin"></span><span>Carregando vídeo…</span></div></div>' +
-        '<button class="player-x" type="button" data-act="fs-exit" aria-label="Sair da tela cheia">' + icon('x') + '</button></div>' +
-        '<div class="player-tools"><span>Gire o celular para assistir maior</span><button class="btn btn-line btn-sm" type="button" data-act="fs">' + icon('arrows-out') + '<span>Tela cheia</span></button></div>';
+      player = '<div class="player-wrap"><div class="player" id="player"><div class="player-load"><span class="spin"></span><span>Carregando vídeo…</span></div></div></div>';
     }
     var mats = (l.pdfs || []).map(function (p) {
       return '<div class="mat"><button class="mat-open" type="button" data-pdfview="' + esc(p.id) + '" data-title="' + esc(p.name) + '" data-sub="' + esc(l.title) + '">' +
