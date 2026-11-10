@@ -903,9 +903,9 @@
       '<div class="redeem-row"><input id="codeInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ED-XXXX-XXXX-XXXX" aria-describedby="codeHelp codeErr" value="' + esc(preKey) + '">' +
       '<button class="btn btn-line" type="button" id="codeBtn"><span class="btn-label">Entrar</span></button></div>' +
       '<div class="name-step" id="nameStep" hidden><label for="nameInput">Como você se chama?</label>' +
-      '<p>Primeiro acesso com esta chave. Seu nome fica na sua conta e aparece no chat das aulas.</p>' +
+      '<p>Seu nome aparece no chat das aulas e fica salvo neste aparelho.</p>' +
       '<input id="nameInput" type="text" maxlength="40" autocomplete="name" placeholder="Seu nome">' +
-      '<button class="btn btn-ink btn-block" type="button" id="nameBtn"><span class="btn-label">Criar minha conta</span></button></div>' +
+      '<button class="btn btn-ink btn-block" type="button" id="nameBtn"><span class="btn-label">Entrar</span></button></div>' +
       '<p class="err" id="codeErr" role="alert" hidden></p></div>';
   }
   function openPay(reason) {
