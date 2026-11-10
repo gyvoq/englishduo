@@ -1,4 +1,5 @@
 import { wrap, send } from '../lib/http.js';
+import { rateLimit } from '../lib/redis.js';
 import { student } from '../lib/session.js';
 import { content, readPdf } from '../lib/content.js';
 
@@ -10,6 +11,7 @@ export default wrap(async (req, res) => {
   if (req.method !== 'GET') return send(res, 405, { error: 'Método inválido.' });
   const st = await student(req, res);
   if (!st) return send(res, 401, { error: 'Entre com sua chave para baixar.' });
+  if (!(await rateLimit('pdf:' + st.key + ':' + st.device, 40, 600))) return send(res, 429, { error: 'Muitos downloads em pouco tempo. Espere alguns minutos.' });
   const id = String((req.query && req.query.id) || '');
   const buf = readPdf(id);
   if (!buf) return send(res, 404, { error: 'Material não encontrado.' });
