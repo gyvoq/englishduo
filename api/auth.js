@@ -1,6 +1,7 @@
 import { wrap, send, body, clientIp } from '../lib/http.js';
 import { redis, rateLimit } from '../lib/redis.js';
 import { student, deviceId, startSession, endSession, meOf } from '../lib/session.js';
+import { checkName } from '../lib/moderation.js';
 import { normKey, getLicense, saveLicense, statusOf, addMonths, members } from '../lib/licenses.js';
 
 function cleanName(s) {
@@ -34,6 +35,8 @@ async function login(req, res) {
   const name = cleanName(b.name);
   if (!name) return send(res, 200, { need: 'name', suggest: mine ? mine.name : '' });
   if (name.length < 2) return send(res, 400, { error: 'Digite seu nome.', need: 'name' });
+  const badName = checkName(name);
+  if (badName) return send(res, 400, { error: badName, need: 'name' });
 
   if (st === 'unused') {
     lic.activatedAt = now;
