@@ -468,7 +468,6 @@ body[data-view="chat"] .toast{bottom:calc(var(--tab-h) + 84px + env(safe-area-in
 @media(max-width:479px){
   .hero{padding:20px 0 14px;gap:20px}
   .lv-head{padding:14px 0 12px}
-  .player{border-radius:var(--r-md);margin-inline:calc(var(--gx) * -1);width:auto;border-radius:0}
   .lv-sec{margin-top:20px}
   .q{padding:16px}
   .q-text{font-size:1.0625rem}
@@ -484,3 +483,32 @@ body[data-view="chat"] .toast{bottom:calc(var(--tab-h) + 84px + env(safe-area-in
 }
 input,textarea,select{font-size:16px}
 .redeem-row input,.name-step input,.search input{font-size:16px}
+
+/* ===== player no celular ===== */
+.player-wrap{position:relative}
+.player-x{display:none;position:absolute;top:calc(10px + env(safe-area-inset-top));left:calc(10px + env(safe-area-inset-left));z-index:5;width:44px;height:44px;place-items:center;border-radius:var(--r-pill);background:rgba(0,0,0,.6);color:#fff}
+.player-x svg.ico{width:22px;height:22px}
+.player-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
+.player-tools>span{font-size:.8125rem;color:var(--ink-2);line-height:1.3}
+.player-tools .btn svg.ico{width:18px;height:18px}
+.player-wrap.fs,.player-wrap:fullscreen{position:fixed;inset:0;z-index:95;background:#000;display:flex;align-items:center;justify-content:center}
+.player-wrap:-webkit-full-screen{position:fixed;inset:0;z-index:95;background:#000;display:flex;align-items:center;justify-content:center}
+.player-wrap.fs .player,.player-wrap:fullscreen .player{width:100%;height:100%;max-height:100%;aspect-ratio:auto;border-radius:0;margin:0}
+.player-wrap:-webkit-full-screen .player{width:100%;height:100%;aspect-ratio:auto;border-radius:0;margin:0}
+.player-wrap.fs .player-x,.player-wrap:fullscreen .player-x{display:grid}
+.player-wrap.fs .player-shield,.player-wrap:fullscreen .player-shield{top:0;right:0}
+
+@media(max-width:719px){
+  body[data-view="lesson"] .qbar{position:relative}
+  body[data-view="lesson"] .player-wrap:not(.fs){position:sticky;top:0;z-index:15;margin-inline:calc(var(--gx) * -1);background:#000}
+  body[data-view="lesson"] .player-wrap:not(.fs) .player{border-radius:0}
+  body[data-view="lesson"] .player-pdf{border-radius:var(--r-md)}
+  .player-tools{margin-top:8px}
+}
+/* celular deitado: o vídeo ocupa a tela toda */
+@media(orientation:landscape) and (max-height:520px){
+  body[data-view="lesson"] .player-wrap{position:fixed!important;inset:0;z-index:95;margin:0!important;background:#000}
+  body[data-view="lesson"] .player-wrap .player{width:100%;height:100%;aspect-ratio:auto;border-radius:0}
+  body[data-view="lesson"] .tabbar,body[data-view="lesson"] .toast{display:none}
+  body[data-view="lesson"]{overflow:hidden}
+}
