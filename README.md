@@ -1,23 +1,23 @@
 # EnglishDuo
 
-Site de questões de inglês com área de membros (aulas, PDFs e chat) e painel admin. Feito para a Vercel, sem dependências.
+English practice site with a members area (lessons, PDFs and chat) and an admin panel. Built for Vercel, with no dependencies.
 
 - Site: `/`
 - Admin: `/admin`
 
-## Variáveis de ambiente (Vercel)
+## Environment variables (Vercel)
 
-| Nome | O que é |
+| Name | What it is |
 | --- | --- |
-| `ADMIN_PASSWORD` | Senha do painel admin (mín. 8 caracteres) |
-| `SESSION_SECRET` | Texto aleatório longo (mín. 24 caracteres) |
-| `CONTENT_KEY` | Chave que descriptografa questões, aulas e PDFs |
-| `KV_REST_API_URL` / `KV_REST_API_TOKEN` | Criadas sozinhas ao conectar o Upstash Redis (Storage) |
+| `ADMIN_PASSWORD` | Admin panel password (min. 8 characters) |
+| `SESSION_SECRET` | Long random string (min. 24 characters) |
+| `CONTENT_KEY` | Key that decrypts questions, lessons and PDFs |
+| `KV_REST_API_URL` / `KV_REST_API_TOKEN` | Created automatically when you connect Upstash Redis (Storage) |
 
-## Segurança
+## Security
 
-O conteúdo pago (questões, links das aulas e PDFs) fica criptografado no repositório e só é liberado pelo servidor para quem tem chave válida. Sem `CONTENT_KEY` ninguém consegue ler.
+Paid content (questions, lesson links and PDFs) is stored encrypted in the repository and is only released by the server to users with a valid key. Without `CONTENT_KEY`, no one can read it.
 
-## Editar conteúdo
+## Editing content
 
-Coloque `content.json` e os PDFs em `private/` (essa pasta nunca vai para o GitHub) e rode `CONTENT_KEY=... npm run build:content`.
+Put `content.json` and the PDFs in `private/` (this folder never goes to GitHub) and run `CONTENT_KEY=... npm run build:content`.
