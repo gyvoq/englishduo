@@ -1,5 +1,6 @@
 import { wrap, send, body, clientIp } from '../lib/http.js';
-import { redis, rateLimit } from '../lib/redis.js';
+import { redis, pipeline, rateLimit } from '../lib/redis.js';
+import { content } from '../lib/content.js';
 import { isAdmin, startAdmin, endAdmin, safeEqual } from '../lib/session.js';
 import { genKey, normKey, getLicense, saveLicense, createLicense, listLicenses, deleteLicense, statusOf, dayStart, dayEnd } from '../lib/licenses.js';
 
@@ -65,16 +66,25 @@ const actions = {
   },
 
   async chatList() {
-    const raw = (await redis('LRANGE', 'chat', '0', '199')) || [];
+    const lessons = Object.values(content().lessons);
+    const res = await pipeline(lessons.map((l) => ['LRANGE', 'chat:' + l.id, '0', '99']));
     const msgs = [];
-    raw.forEach((r) => { try { const m = JSON.parse(r); msgs.push({ id: m.id, n: m.n, t: m.t, ts: m.ts }); } catch {} });
-    return { msgs };
+    res.forEach((raw, i) => {
+      const l = lessons[i];
+      (raw || []).forEach((r) => {
+        try { const m = JSON.parse(r); msgs.push({ id: m.id, n: m.n, t: m.t, ts: m.ts, l: l.id, lt: 'Módulo ' + l.id.split('-')[0].slice(1) + ' · ' + l.title }); } catch {}
+      });
+    });
+    msgs.sort((a, b) => b.ts - a.ts);
+    return { msgs: msgs.slice(0, 300) };
   },
 
   async chatDelete(b) {
-    const raw = (await redis('LRANGE', 'chat', '0', '-1')) || [];
+    const l = String(b.l || '');
+    if (!content().lessons[l]) return { status: 404, error: 'Aula não encontrada.' };
+    const raw = (await redis('LRANGE', 'chat:' + l, '0', '-1')) || [];
     const hit = raw.find((r) => { try { return JSON.parse(r).id === b.id; } catch { return false; } });
-    if (hit) await redis('LREM', 'chat', '1', hit);
+    if (hit) await redis('LREM', 'chat:' + l, '1', hit);
     return { ok: true };
   }
 };
