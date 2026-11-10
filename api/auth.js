@@ -1,7 +1,7 @@
 import { wrap, send, body, clientIp } from '../lib/http.js';
 import { redis, rateLimit } from '../lib/redis.js';
 import { student, deviceId, startSession, endSession, meOf } from '../lib/session.js';
-import { normKey, getLicense, saveLicense, statusOf, addMonths } from '../lib/licenses.js';
+import { normKey, getLicense, saveLicense, statusOf, addMonths, members } from '../lib/licenses.js';
 
 function cleanName(s) {
   return String(s || '').replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 40);
@@ -22,29 +22,31 @@ async function login(req, res) {
 
   const now = Date.now();
   const device = deviceId(req, res);
+  if (st === 'unused' && lic.start && now < lic.start) return send(res, 403, { error: 'Esta chave vale a partir de ' + fmt(lic.start) + '.' });
+
+  const list = members(lic);
+  const mine = list.find((m) => m.id === device);
+  if (!mine && list.length >= (lic.devices || 1)) {
+    return send(res, 403, { error: 'Limite de aparelhos desta chave atingido. Fale com o suporte.' });
+  }
+
+  // Todo login pede o nome de quem está entrando neste aparelho.
+  const name = cleanName(b.name);
+  if (!name) return send(res, 200, { need: 'name', suggest: mine ? mine.name : '' });
+  if (name.length < 2) return send(res, 400, { error: 'Digite seu nome.', need: 'name' });
 
   if (st === 'unused') {
-    if (lic.start && now < lic.start) return send(res, 403, { error: 'Esta chave vale a partir de ' + fmt(lic.start) + '.' });
-    const name = cleanName(b.name);
-    if (!name) return send(res, 200, { need: 'name' });
-    if (name.length < 2) return send(res, 400, { error: 'Digite seu nome.', need: 'name' });
-    lic.name = name;
     lic.activatedAt = now;
     lic.expiresAt = lic.months ? addMonths(now, lic.months) : lic.end || null;
-    lic.deviceIds = [device];
-    await saveLicense(lic);
-  } else {
-    lic.deviceIds = lic.deviceIds || [];
-    if (!lic.deviceIds.includes(device)) {
-      if (lic.deviceIds.length >= (lic.devices || 1)) {
-        return send(res, 403, { error: 'Limite de aparelhos desta chave atingido. Fale com o suporte.' });
-      }
-      lic.deviceIds.push(device);
-      await saveLicense(lic);
-    }
   }
-  startSession(res, lic, device);
-  send(res, 200, { ok: true, me: meOf({ key: lic.key, name: lic.name, exp: lic.expiresAt }) });
+  if (mine) mine.name = name;
+  else list.push({ id: device, name, at: now });
+  delete lic.deviceIds;
+  delete lic.name;
+  await saveLicense(lic);
+
+  startSession(res, lic, device, name);
+  send(res, 200, { ok: true, me: meOf({ key: lic.key, name, exp: lic.expiresAt }) });
 }
 
 const QID = /^[a-z0-9-]{3,64}$/;
@@ -58,7 +60,7 @@ export default wrap(async (req, res) => {
   if (action === 'progress') {
     const st = await student(req, res);
     if (!st) return send(res, 401, { error: 'Entre com sua chave.' });
-    const pk = 'prog:' + st.key;
+    const pk = 'prog:' + st.key + ':' + st.device;
     let cur = {};
     try { cur = JSON.parse((await redis('GET', pk)) || '{}') || {}; } catch { cur = {}; }
     if (req.method === 'GET') return send(res, 200, { p: cur });
