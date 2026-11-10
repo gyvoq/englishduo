@@ -225,7 +225,7 @@
     return ST.list.filter(function (l) {
       if (ST.filter !== 'all' && l.status !== ST.filter) return false;
       if (!q) return true;
-      return (l.key + ' ' + l.desc + ' ' + l.name).toLowerCase().indexOf(q) !== -1;
+      return (l.key + ' ' + l.desc + ' ' + l.names.join(' ')).toLowerCase().indexOf(q) !== -1;
     });
   }
 
@@ -245,7 +245,7 @@
     var exp = l.expiresAt ? fmt(l.expiresAt) : (l.status === 'unused' ? (l.end ? fmt(l.end) : validityText(l) + ' após ativar') : '—');
     return '<tr>' +
       '<td class="td-key"><span class="key-cell">' + k + '</span>' + (l.desc ? '<span class="desc">' + esc(l.desc) + '</span>' : '') + '<span class="sub" title="Criada em ' + fmt(l.createdAt) + '">' + esc(validityText(l)) + '</span></td>' +
-      '<td class="td-aluno who"><span class="td-label">Aluno</span>' + (l.name ? esc(l.name) : '<span style="color:var(--muted)">—</span>') + '<span class="sub">' + l.used + '/' + l.devices + ' ' + (l.devices === 1 ? 'aparelho' : 'aparelhos') + '</span></td>' +
+      '<td class="td-aluno who"><span class="td-label">' + (l.devices > 1 ? 'Alunos' : 'Aluno') + '</span>' + (l.names.length ? '<span class="names">' + l.names.map(function (n) { return '<span class="nm">' + esc(n) + '</span>'; }).join('') + '</span>' : '<span style="color:var(--muted)">—</span>') + '<span class="sub">' + l.used + '/' + l.devices + ' ' + (l.devices === 1 ? 'aparelho' : 'aparelhos') + '</span></td>' +
       '<td class="td-status"><span class="status ' + st[1] + '"><span class="dot"></span>' + st[0] + '</span></td>' +
       '<td class="td-ativ"><span class="td-label">Ativada</span><span class="date-cell">' + fmt(l.activatedAt) + '</span></td>' +
       '<td class="td-exp"><span class="td-label">Expira</span><span class="date-cell">' + esc(exp) + '</span></td>' +
@@ -295,7 +295,7 @@
     });
   };
   H.askReset = function (k) {
-    confirmBox('Liberar aparelhos?', 'Os aparelhos da chave <strong>' + esc(k) + '</strong> serão desconectados. O aluno entra de novo com a mesma chave.', 'Liberar', '', function () {
+    confirmBox('Liberar aparelhos?', 'Todos os aparelhos e nomes da chave <strong>' + esc(k) + '</strong> serão removidos e as vagas liberadas. Quem tiver a chave pode entrar de novo.', 'Liberar', '', function () {
       return api('resetDevices', { key: k }).then(function () { toast('Aparelhos liberados.'); });
     });
   };
