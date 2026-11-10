@@ -74,7 +74,7 @@
   function sessionLost() {
     if (!S.me) return;
     S.me = null; S.unlocked = false;
-    loadContent().then(function () { refreshAll(); if (S.view === 'lesson' || S.view === 'chat') showCourses(); }).catch(function () {});
+    loadContent().then(function () { refreshAll(); if (S.view === 'lesson') showCourses(); }).catch(function () {});
     toast('Sua sessão terminou. Entre de novo com sua chave.');
   }
 
@@ -165,7 +165,7 @@
       var h = t.answered ? 'Continue de onde parou, ' + esc(firstName()) + '.' : 'Bem-vindo, ' + esc(firstName()) + '.';
       var sub = t.answered
         ? 'Você respondeu ' + t.answered + ' ' + plural(t.answered, 'questão', 'questões') + ' e acertou ' + t.correct + '.'
-        : 'Todas as ' + TOTAL + ' questões, as aulas e o chat dos alunos estão liberados.';
+        : 'Todas as ' + TOTAL + ' questões, as aulas e os materiais estão liberados.';
       el.innerHTML = '<section class="hero"><div class="hero-copy"><h1>' + h + '</h1><p class="lead">' + sub + '</p></div>' +
         (t.answered ? '<div class="allow"><p class="bignum">' + t.pct + '%</p><p>de acerto</p></div>' : '') + '</section>';
       return;
@@ -255,7 +255,7 @@
     }
   }
 
-  var VIEWS = ['home', 'quiz', 'progress', 'courses', 'lesson', 'chat'];
+  var VIEWS = ['home', 'quiz', 'progress', 'courses', 'lesson'];
   function setView(v) {
     var prev = S.view;
     S.view = v;
@@ -263,7 +263,7 @@
     document.body.setAttribute('data-view', v);
     renderTop(); renderTabs();
     if (prev === 'lesson' && v !== 'lesson') stopPlayer();
-    if (v === 'chat') chatStart(); else chatStop();
+    if (v !== 'lesson') chatStop();
     window.scrollTo(0, 0);
   }
   function renderTop() {
@@ -276,7 +276,7 @@
     $$('.tab').forEach(function (t) {
       var k = t.dataset.tab;
       var on = (k === 'home' && (S.view === 'home' || S.view === 'quiz')) || (k === 'progress' && S.view === 'progress') ||
-        (k === 'courses' && (S.view === 'courses' || S.view === 'lesson')) || (k === 'chat' && S.view === 'chat');
+        (k === 'courses' && (S.view === 'courses' || S.view === 'lesson'));
       t.classList.toggle('on', on);
       if (on) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
     });
@@ -296,6 +296,7 @@
   }
   function showHome() { S.pushed = false; refreshHome(); setView('home'); }
   window.addEventListener('popstate', function () {
+    if (PV.open) { closePdf(true); return; }
     if (S.view === 'lesson') { S.pushed = false; showCourses(); return; }
     if (S.view !== 'home') { S.pushed = false; refreshHome(); setView('home'); }
   });
@@ -543,12 +544,14 @@
 
     var player;
     if (l.kind === 'pdf') {
-      player = '<div class="player player-pdf">' + icon('file-pdf') + '<strong>Esta aula é um material em PDF</strong><span>Baixe o arquivo abaixo para estudar.</span></div>';
+      player = '<div class="player player-pdf">' + icon('file-pdf') + '<strong>Esta aula é um material em PDF</strong><span>Abra o material abaixo para estudar.</span></div>';
     } else {
       player = '<div class="player" id="player"><div class="player-load"><span class="spin"></span><span>Carregando vídeo…</span></div></div>';
     }
     var mats = (l.pdfs || []).map(function (p) {
-      return '<button class="mat" type="button" data-pdf="' + esc(p.id) + '" data-name="' + esc(l.title) + '"><span class="mat-ico">' + icon('file-pdf') + '</span><span class="mat-body"><strong>' + esc(p.name) + '</strong><span>PDF · exercícios e gabarito</span></span><span class="mat-dl">' + icon('download-simple') + '</span></button>';
+      return '<div class="mat"><button class="mat-open" type="button" data-pdfview="' + esc(p.id) + '" data-title="' + esc(p.name) + '" data-sub="' + esc(l.title) + '">' +
+        '<span class="mat-ico">' + icon('file-pdf') + '</span><span class="mat-body"><strong>' + esc(p.name) + '</strong><span>Toque para ver no site</span></span></button>' +
+        '<button class="mat-dl" type="button" data-pdfdl="' + esc(p.id) + '" aria-label="Baixar ' + esc(p.name) + '">' + icon('download-simple') + '</button></div>';
     }).join('');
     var desc = l.desc || (c && c.goal) || '';
 
@@ -558,6 +561,7 @@
       '<div class="lv-head"><h1>' + esc(l.title) + '</h1></div>' + player +
       '<section class="lv-sec"><h2>Sobre a aula</h2><p>' + (desc ? esc(desc) : 'Assista à aula e use o material de apoio para praticar.') + '</p></section>' +
       '<section class="lv-sec"><h2>Material de apoio</h2>' + (mats ? '<div class="mats">' + mats + '</div>' : '<p class="none">Esta aula não tem material em PDF.</p>') + '</section>' +
+      chatHTML() +
       '<nav class="lv-nav">' +
       (prev ? '<button class="btn btn-line" type="button" data-lesson="' + esc(prev.id) + '">' + icon('caret-left') + '<span>Anterior</span></button>' : '<span></span>') +
       (next ? '<button class="btn btn-ink" type="button" data-lesson="' + esc(next.id) + '"><span>Próxima aula</span>' + icon('caret-right') + '</button>' : '<span></span>') +
@@ -566,6 +570,7 @@
     if (S.view !== 'lesson') pushHist();
     setView('lesson');
     if (l.kind !== 'pdf') loadVideo(l);
+    chatStart(l.id);
   }
 
   function playerFail(box, title, sub) {
@@ -598,36 +603,141 @@
     });
   }
 
-  function downloadPdf(btn) {
+  // ---------- PDF: ver no site e baixar ----------
+  var PDFS = {};
+  function fetchPdf(id) {
+    if (PDFS[id]) return Promise.resolve(PDFS[id]);
+    return fetch('/api/material?id=' + encodeURIComponent(id), { credentials: 'same-origin' }).then(function (r) {
+      if (r.status === 401) { var e = new Error('Sessão expirada.'); e.status = 401; throw e; }
+      if (!r.ok) throw new Error('Não foi possível abrir o material.');
+      var m = /filename="([^"]+)"/.exec(r.headers.get('Content-Disposition') || '');
+      return r.arrayBuffer().then(function (buf) { PDFS[id] = { buf: buf, name: m ? m[1] : 'material.pdf' }; return PDFS[id]; });
+    }, function () { throw new Error('Sem conexão. Tente de novo.'); });
+  }
+  function savePdf(x) {
+    var url = URL.createObjectURL(new Blob([x.buf], { type: 'application/pdf' }));
+    var a = document.createElement('a');
+    a.href = url; a.download = x.name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    toast('Download iniciado.');
+  }
+  function downloadPdf(btn, id) {
     if (btn.classList.contains('busy')) return;
     btn.classList.add('busy');
-    var id = btn.dataset.pdf;
-    fetch('/api/material?id=' + encodeURIComponent(id), { credentials: 'same-origin' }).then(function (r) {
-      if (r.status === 401) { var e = new Error('401'); e.status = 401; throw e; }
-      if (!r.ok) throw new Error('Não foi possível baixar o material.');
-      var cd = r.headers.get('Content-Disposition') || '';
-      var m = /filename="([^"]+)"/.exec(cd);
-      return r.blob().then(function (b) { return { b: b, name: m ? m[1] : 'material.pdf' }; });
-    }).then(function (x) {
-      var url = URL.createObjectURL(x.b);
-      var a = document.createElement('a');
-      a.href = url; a.download = x.name; document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-      toast('Download iniciado.');
-    }).catch(function (e) {
-      if (e.status === 401) sessionLost(); else toast(e.message === 'Failed to fetch' ? 'Sem conexão.' : e.message);
+    fetchPdf(id).then(savePdf).catch(function (e) {
+      if (e.status === 401) sessionLost(); else toast(e.message);
     }).then(function () { btn.classList.remove('busy'); });
   }
 
-  // ---------- chat ----------
-  var CH = { timer: null, last: '', loaded: false, sending: false };
-  function chatShell() {
-    $('#chatView').innerHTML =
-      '<div class="chat-head"><h1>Chat dos alunos</h1><p>Tire dúvidas e pratique com outros alunos. Seja gentil.</p></div>' +
-      '<div class="chat-list" id="chatList" aria-live="polite"><div class="loadbox"><span class="spin"></span><span>Carregando mensagens…</span></div></div>' +
-      '<form class="chat-form" id="chatForm" autocomplete="off"><textarea id="chatInput" rows="1" maxlength="500" placeholder="Escreva uma mensagem" aria-label="Mensagem"></textarea>' +
-      '<button class="btn btn-red" type="submit" id="chatSend" aria-label="Enviar">' + icon('paper-plane-right') + '</button></form>';
-    CH.last = ''; CH.loaded = false;
+  var pdfLib = null;
+  function loadPdfJs() {
+    if (pdfLib) return pdfLib;
+    pdfLib = new Promise(function (res, rej) {
+      var s = document.createElement('script');
+      s.src = '/vendor/pdfjs/pdf.min.js';
+      s.onload = function () {
+        if (!window.pdfjsLib) { rej(new Error('Leitor de PDF indisponível.')); return; }
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.js';
+        res(window.pdfjsLib);
+      };
+      s.onerror = function () { pdfLib = null; rej(new Error('Não foi possível abrir o leitor de PDF.')); };
+      document.head.appendChild(s);
+    });
+    return pdfLib;
+  }
+
+  var PV = { id: null, doc: null, zoom: 1, job: 0, pushed: false, open: false };
+  function pdfMsg(html) { $('#pdfBody').innerHTML = '<div class="pdfv-msg">' + html + '</div>'; }
+  function openPdf(id, title, sub) {
+    PV.id = id; PV.doc = null; PV.zoom = 1; PV.open = true;
+    $('#pdfTitle').textContent = title || 'Material';
+    $('#pdfInfo').textContent = sub || '';
+    $('#pdfZoom').textContent = '100%';
+    pdfMsg('<span class="spin"></span><span>Abrindo material…</span>');
+    $('#pdfLayer').hidden = false;
+    document.body.classList.add('lock');
+    try { history.pushState({ pdf: 1 }, ''); PV.pushed = true; } catch (e) { PV.pushed = false; }
+    setTimeout(function () { try { $('#pdfClose').focus({ preventScroll: true }); } catch (e) { } }, 30);
+    var job = ++PV.job;
+    Promise.all([loadPdfJs(), fetchPdf(id)]).then(function (r) {
+      return r[0].getDocument({ data: r[1].buf.slice(0), isEvalSupported: false }).promise;
+    }).then(function (doc) {
+      if (job !== PV.job) return;
+      PV.doc = doc;
+      $('#pdfInfo').textContent = (sub ? sub + ' · ' : '') + doc.numPages + ' ' + plural(doc.numPages, 'página', 'páginas');
+      renderPdf();
+    }).catch(function (e) {
+      if (job !== PV.job) return;
+      if (e.status === 401) { closePdf(); sessionLost(); return; }
+      pdfMsg(icon('warning-circle') + '<span>' + esc(e.message || 'Não foi possível abrir o material.') + '</span><button class="btn btn-line btn-sm" type="button" data-pdfv="retry">Tentar de novo</button>');
+    });
+  }
+  function renderPdf() {
+    var doc = PV.doc; if (!doc) return;
+    var job = ++PV.job, body = $('#pdfBody');
+    var avail = Math.min(body.clientWidth - 24, 860);
+    var width = Math.round(avail * PV.zoom);
+    var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    body.innerHTML = '';
+    var pages = [];
+    for (var i = 1; i <= doc.numPages; i++) {
+      var w = document.createElement('div');
+      w.className = 'pdfv-page';
+      w.style.width = width + 'px';
+      w.innerHTML = '<span class="spin"></span>';
+      body.appendChild(w);
+      pages.push(w);
+    }
+    var n = 0;
+    (function next() {
+      if (job !== PV.job || n >= doc.numPages) return;
+      var idx = ++n;
+      doc.getPage(idx).then(function (page) {
+        if (job !== PV.job) return;
+        var v1 = page.getViewport({ scale: 1 });
+        var vp = page.getViewport({ scale: (width / v1.width) * dpr });
+        var cv = document.createElement('canvas');
+        cv.width = Math.floor(vp.width); cv.height = Math.floor(vp.height);
+        cv.style.width = width + 'px'; cv.style.height = Math.floor(vp.height / dpr) + 'px';
+        var box = pages[idx - 1];
+        box.style.height = cv.style.height;
+        return page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise.then(function () {
+          if (job !== PV.job) return;
+          box.innerHTML = ''; box.style.height = ''; box.appendChild(cv);
+        });
+      }).then(next, next);
+    })();
+  }
+  function zoomPdf(d) {
+    if (!PV.doc) return;
+    var z = Math.max(1, Math.min(3, Math.round((PV.zoom + d) * 100) / 100));
+    if (z === PV.zoom) return;
+    var body = $('#pdfBody'), ratio = body.scrollTop / Math.max(1, body.scrollHeight);
+    PV.zoom = z; renderPdf();
+    requestAnimationFrame(function () { body.scrollTop = ratio * body.scrollHeight; });
+    $('#pdfZoom').textContent = Math.round(z * 100) + '%';
+  }
+  function closePdf(fromPop) {
+    if (!PV.open) return;
+    PV.open = false; PV.job++; PV.doc = null;
+    $('#pdfLayer').hidden = true;
+    $('#pdfBody').innerHTML = '';
+    document.body.classList.remove('lock');
+    if (PV.pushed && !fromPop) { try { history.back(); } catch (e) { } }
+    PV.pushed = false;
+  }
+  var pdfResizeT;
+  window.addEventListener('resize', function () { if (PV.open && PV.doc) { clearTimeout(pdfResizeT); pdfResizeT = setTimeout(renderPdf, 250); } });
+
+  // ---------- chat de cada aula ----------
+  var CH = { timer: null, last: '', loaded: false, sending: false, l: null };
+  function chatHTML() {
+    return '<section class="lv-sec lchat-sec"><h2>Dúvidas da aula</h2>' +
+      '<p class="lchat-sub">Converse com a turma sobre esta aula. Seja gentil: mensagens ofensivas são bloqueadas.</p>' +
+      '<div class="lchat"><div class="chat-list" id="chatList" aria-live="polite"><div class="loadbox"><span class="spin"></span><span>Carregando mensagens…</span></div></div>' +
+      '<form class="chat-form" id="chatForm" autocomplete="off"><textarea id="chatInput" rows="1" maxlength="500" placeholder="Escreva sua dúvida ou comentário" aria-label="Mensagem"></textarea>' +
+      '<button class="btn btn-red" type="submit" id="chatSend" aria-label="Enviar">' + icon('paper-plane-right') + '</button></form>' +
+      '<p class="chat-err" id="chatErr" role="alert" hidden></p></div></section>';
   }
   function msgHTML(m) {
     return '<div class="msg' + (m.me ? ' me' : '') + (m.pending ? ' pending' : '') + '" data-id="' + esc(m.id) + '">' +
@@ -641,30 +751,37 @@
     var near = list.scrollHeight - list.scrollTop - list.clientHeight < 120 || !CH.loaded;
     CH.last = sig; CH.loaded = true;
     list.innerHTML = msgs.length ? msgs.map(msgHTML).join('') :
-      '<div class="chat-empty">' + icon('chat-circle-dots') + '<p>Nenhuma mensagem ainda.<br>Comece a conversa!</p></div>';
+      '<div class="chat-empty">' + icon('chat-circle-dots') + '<p>Nenhuma mensagem nesta aula ainda.<br>Tire a primeira dúvida!</p></div>';
     if (near) list.scrollTop = list.scrollHeight;
   }
   function chatPoll() {
-    if (S.view !== 'chat' || document.hidden || !S.me) return;
-    api('/api/chat').then(function (d) { chatRender(d.msgs || []); }).catch(function (e) {
+    var l = CH.l;
+    if (S.view !== 'lesson' || document.hidden || !S.me || !l) return;
+    api('/api/chat?l=' + encodeURIComponent(l)).then(function (d) { if (l === CH.l) chatRender(d.msgs || []); }).catch(function (e) {
       if (e.status === 401) { sessionLost(); return; }
-      if (!CH.loaded) { var l = $('#chatList'); if (l) l.innerHTML = '<div class="chat-empty"><p>' + esc(e.message) + '</p></div>'; }
+      if (!CH.loaded) { var el = $('#chatList'); if (el) el.innerHTML = '<div class="chat-empty"><p>' + esc(e.message) + '</p></div>'; }
     });
   }
-  function chatStart() {
+  function chatStart(l) {
     chatStop();
     if (!S.me) return;
-    if (!$('#chatList')) chatShell();
+    CH.l = l; CH.last = ''; CH.loaded = false; CH.sending = false;
     chatPoll();
-    CH.timer = setInterval(chatPoll, 6000);
+    CH.timer = setInterval(chatPoll, 8000);
   }
   function chatStop() { if (CH.timer) clearInterval(CH.timer); CH.timer = null; }
-  document.addEventListener('visibilitychange', function () { if (!document.hidden && S.view === 'chat') chatPoll(); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && S.view === 'lesson') chatPoll(); });
 
+  function chatErr(msg) {
+    var e = $('#chatErr'); if (!e) return;
+    if (!msg) { e.hidden = true; return; }
+    e.hidden = false; e.innerHTML = icon('warning-circle') + '<span>' + esc(msg) + '</span>';
+  }
   function chatSend() {
     var inp = $('#chatInput'), text = inp.value.trim();
-    if (!text || CH.sending) return;
+    if (!text || CH.sending || !CH.l) return;
     CH.sending = true;
+    chatErr('');
     var list = $('#chatList');
     var empty = $('.chat-empty', list); if (empty) empty.remove();
     var tmp = { id: 'tmp', n: S.me.name, t: text, ts: Date.now(), me: true, pending: true };
@@ -672,22 +789,14 @@
     list.scrollTop = list.scrollHeight;
     inp.value = ''; inp.style.height = '';
     $('#chatSend').classList.add('loading');
-    api('/api/chat', { method: 'POST', body: { text: text } }).then(function () {
+    api('/api/chat', { method: 'POST', body: { l: CH.l, text: text } }).then(function () {
       CH.last = ''; chatPoll();
     }).catch(function (e) {
       var p = $('.msg[data-id="tmp"]', list); if (p) p.remove();
       if (e.status === 401) { sessionLost(); return; }
       inp.value = text;
-      toast(e.message);
+      chatErr(e.message);
     }).then(function () { CH.sending = false; var b = $('#chatSend'); if (b) b.classList.remove('loading'); });
-  }
-
-  function showChat() {
-    if (!S.ready) return;
-    if (!S.unlocked) { openPay('chat'); return; }
-    if (S.view === 'home') pushHist();
-    chatShell();
-    setView('chat');
   }
 
   // ---------- progresso ----------
@@ -738,6 +847,7 @@
     }, REDUCED ? 0 : 200);
   }
   document.addEventListener('keydown', function (e) {
+    if (PV.open && e.key === 'Escape') { closePdf(); return; }
     var L = $('.layer:not([hidden])');
     if (!L) return;
     if (e.key === 'Escape' && L.id === 'payLayer') { closeLayer('payLayer'); return; }
@@ -758,8 +868,7 @@
     hero: 'Libere todas as questões.',
     top: 'Libere todas as questões.',
     tab: 'Entre ou libere o acesso.',
-    video: 'As aulas gravadas são do acesso completo.',
-    chat: 'O chat é exclusivo para alunos.'
+    video: 'As aulas gravadas são do acesso completo.'
   };
 
   function renderPay(reason) {
@@ -784,17 +893,17 @@
       '<ul class="perks">' +
       '<li><span class="perk-ico">' + icon('list-checks') + '</span><span>' + TOTAL + ' questões em ' + MODULES.length + ' módulos, sem limite</span></li>' +
       '<li><span class="perk-ico">' + icon('play-circle') + '</span><span>' + lessonCount() + ' aulas gravadas direto no site</span></li>' +
-      '<li><span class="perk-ico">' + icon('file-pdf') + '</span><span>Material em PDF de cada aula, com gabarito</span></li>' +
-      '<li><span class="perk-ico">' + icon('chat-circle-dots') + '</span><span>Chat exclusivo com outros alunos</span></li></ul>' +
+      '<li><span class="perk-ico">' + icon('file-pdf') + '</span><span>Material em PDF de cada aula, para ver e baixar</span></li>' +
+      '<li><span class="perk-ico">' + icon('chat-circle-dots') + '</span><span>Chat de dúvidas em cada aula</span></li></ul>' +
       (CONFIG.priceLabel ? '<p class="price">' + esc(CONFIG.priceLabel) + '</p>' : '') +
       '<a class="btn btn-red btn-block" id="payGo" data-autofocus href="' + esc(CONFIG.checkoutUrl) + '" target="_blank" rel="noopener noreferrer">Liberar acesso completo agora' + icon('arrow-up-right') + '</a>' +
       '<p class="fine">Pagamento único e seguro. A chave de acesso chega no seu e-mail.</p>' +
       '<div class="redeem"><label for="codeInput">Já pagou? Entre com sua chave</label>' +
       '<p class="help" id="codeHelp">Confira seu e-mail (e a caixa de spam).</p>' +
-      '<div class="redeem-row"><input id="codeInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ED-XXXX-XXXX-XXXX" aria-describedby="codeHelp codeErr">' +
+      '<div class="redeem-row"><input id="codeInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ED-XXXX-XXXX-XXXX" aria-describedby="codeHelp codeErr" value="' + esc(preKey) + '">' +
       '<button class="btn btn-line" type="button" id="codeBtn"><span class="btn-label">Entrar</span></button></div>' +
       '<div class="name-step" id="nameStep" hidden><label for="nameInput">Como você se chama?</label>' +
-      '<p>Primeiro acesso com esta chave. Seu nome fica na sua conta e aparece no chat.</p>' +
+      '<p>Primeiro acesso com esta chave. Seu nome fica na sua conta e aparece no chat das aulas.</p>' +
       '<input id="nameInput" type="text" maxlength="40" autocomplete="name" placeholder="Seu nome">' +
       '<button class="btn btn-ink btn-block" type="button" id="nameBtn"><span class="btn-label">Criar minha conta</span></button></div>' +
       '<p class="err" id="codeErr" role="alert" hidden></p></div>';
@@ -836,6 +945,7 @@
         closePay();
         refreshAll();
         if (S.view === 'courses') renderCourses();
+        preKey = '';
         toast('Bem-vindo, ' + firstName() + '! Acesso liberado.');
       });
     }).catch(function (e) {
@@ -853,7 +963,7 @@
       return loadContent();
     }).then(function () {
       closePay();
-      if (S.view === 'lesson' || S.view === 'chat') { stopPlayer(); showHome(); }
+      if (S.view === 'lesson') { stopPlayer(); chatStop(); showHome(); }
       refreshAll();
       toast('Você saiu da conta.');
     }).catch(function () { location.reload(); });
@@ -903,14 +1013,23 @@
     if ((el = t.closest('[data-close]'))) { var L = el.closest('.layer'); if (L && L.id === 'payLayer') closePay(); return; }
     if ((el = t.closest('[data-magic-id]'))) { openModule(el.dataset.magicId); return; }
     if ((el = t.closest('[data-lesson]'))) { showLesson(el.dataset.lesson); return; }
-    if ((el = t.closest('[data-pdf]'))) { downloadPdf(el); return; }
+    if ((el = t.closest('[data-pdfview]'))) { openPdf(el.dataset.pdfview, el.dataset.title, el.dataset.sub); return; }
+    if ((el = t.closest('[data-pdfdl]'))) { downloadPdf(el, el.dataset.pdfdl); return; }
+    if ((el = t.closest('[data-pdfv]'))) {
+      var pa = el.dataset.pdfv;
+      if (pa === 'close') closePdf();
+      else if (pa === 'in') zoomPdf(0.25);
+      else if (pa === 'out') zoomPdf(-0.25);
+      else if (pa === 'retry') { var keep = [PV.id, $('#pdfTitle').textContent]; closePdf(); openPdf(keep[0], keep[1]); }
+      else if (pa === 'dl' && PV.id) downloadPdf(el, PV.id);
+      return;
+    }
 
     if (t.closest('#brand')) { if (S.view !== 'home') goHome(); else window.scrollTo({ top: 0, behavior: REDUCED ? 'auto' : 'smooth' }); return; }
     if ((el = t.closest('.tab'))) {
       var k = el.dataset.tab;
       if (k === 'home') { if (S.view !== 'home') goHome(); else window.scrollTo({ top: 0, behavior: REDUCED ? 'auto' : 'smooth' }); }
       else if (k === 'courses') { if (S.view !== 'courses') showCourses(); }
-      else if (k === 'chat') { if (S.view !== 'chat') showChat(); }
       else if (k === 'progress') { if (S.view !== 'progress') showProgress(); }
       else openPay(S.unlocked ? 'account' : 'tab');
       return;
@@ -1009,7 +1128,6 @@
       setTimeout(function () { $('#grid').classList.remove('enter'); $('#homeView').classList.remove('enter-hero'); }, 1400);
       if (preKey && !S.unlocked) {
         openPay('tab');
-        setTimeout(function () { var i = $('#codeInput'); if (i) i.value = preKey; preKey = ''; }, 260);
       }
     }).catch(function (e) { renderBootError(e.message); });
   }
