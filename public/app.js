@@ -42,9 +42,16 @@
   try { S.seen = JSON.parse(sget('ed.seen') || '{}') || {}; } catch (e) { S.seen = {}; }
 
   // ---------- servidor ----------
+  function authHeaders(h) {
+    var d = sget('ed.did'), t = sget('ed.st');
+    if (d) h['x-did'] = d;
+    if (t) h['x-st'] = t;
+    return h;
+  }
+
   function api(path, opts) {
     opts = opts || {};
-    var init = { method: opts.method || 'GET', credentials: 'same-origin', headers: {} };
+    var init = { method: opts.method || 'GET', credentials: 'same-origin', headers: authHeaders({}) };
     if (opts.body) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(opts.body); }
     return fetch(path, init).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) {
@@ -628,7 +635,7 @@
   var PDFS = {};
   function fetchPdf(id) {
     if (PDFS[id]) return Promise.resolve(PDFS[id]);
-    return fetch('/api/material?id=' + encodeURIComponent(id), { credentials: 'same-origin' }).then(function (r) {
+    return fetch('/api/material?id=' + encodeURIComponent(id), { credentials: 'same-origin', headers: authHeaders({}) }).then(function (r) {
       if (r.status === 401) { var e = new Error('Sessão expirada.'); e.status = 401; throw e; }
       if (!r.ok) throw new Error('Não foi possível abrir o material.');
       var m = /filename="([^"]+)"/.exec(r.headers.get('Content-Disposition') || '');
@@ -961,6 +968,8 @@
         setTimeout(function () { nameIn.focus(); }, 30);
         return;
       }
+      if (d.did) sset('ed.did', d.did);
+      if (d.st) sset('ed.st', d.st);
       return loadContent().then(pullProgress).then(function () {
         setBusy(btn, false);
         closePay();
@@ -980,6 +989,7 @@
     var b = $('#logoutBtn');
     if (b) { b.disabled = true; b.textContent = 'Saindo…'; }
     api('/api/auth?action=logout', { method: 'POST' }).catch(function () {}).then(function () {
+      sdel('ed.st');
       S.progress = {}; sdel('ed.progress'); S.seen = {}; sdel('ed.seen');
       return loadContent();
     }).then(function () {
