@@ -1,0 +1,8 @@
+{
+  "name": "englishduo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:content": "node scripts/build-content.mjs"
+  }
+}
