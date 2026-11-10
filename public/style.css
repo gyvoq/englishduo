@@ -486,7 +486,9 @@ input,textarea,select{font-size:16px}
 
 /* ===== player no celular ===== */
 .player-wrap{position:relative}
+/* No celular o player do Drive põe os controles embaixo do vídeo: o quadro precisa ser mais alto que 16:9. */
 @media(max-width:719px){
   .player-wrap{margin-inline:calc(var(--gx) * -1)}
-  .player-wrap .player{border-radius:0}
+  .player-wrap .player{border-radius:0;aspect-ratio:auto;height:calc(56.25vw + 170px);max-height:82dvh}
+  .player-shield{display:none}
 }
