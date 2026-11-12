@@ -49,6 +49,49 @@
     return h;
   }
 
+  // ---------- aparelho ----------
+  // Sinais de HARDWARE que todos os navegadores do mesmo aparelho enxergam igual.
+  // O servidor usa isso (junto com a rede) para não contar Chrome e Safari do mesmo celular como 2 aparelhos.
+  var HW = null;
+  function hwSignals() {
+    if (HW) return HW;
+    var o = {}, nav = window.navigator || {};
+    try {
+      var ua = nav.userAgent || '', pf = ((nav.userAgentData && nav.userAgentData.platform) || nav.platform || '') + ' ' + ua;
+      var tp = nav.maxTouchPoints || 0;
+      o.os = /android/i.test(ua) ? 'android'
+        : (/iphone|ipad|ipod/i.test(ua) || (/mac/i.test(pf) && tp > 1)) ? 'ios'
+        : /cros/i.test(ua) ? 'chromeos'
+        : /win/i.test(pf) ? 'windows'
+        : /mac/i.test(pf) ? 'mac'
+        : /linux/i.test(pf) ? 'linux' : 'other';
+    } catch (e) { o.os = 'other'; }
+    try {
+      var sc = window.screen, w = sc.width, h = sc.height, r = window.devicePixelRatio || 1;
+      o.sw = Math.max(w, h); o.sh = Math.min(w, h);
+      o.pw = Math.round(o.sw * r); o.ph = Math.round(o.sh * r);
+    } catch (e) { }
+    try { o.tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { }
+    try { o.cores = nav.hardwareConcurrency || 0; } catch (e) { }
+    try {
+      var c = document.createElement('canvas'), gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+      if (gl) {
+        var ext = gl.getExtension('WEBGL_debug_renderer_info');
+        o.gpu = String((ext && gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) || gl.getParameter(gl.RENDERER) || '').slice(0, 200);
+        var lose = gl.getExtension('WEBGL_lose_context'); if (lose) lose.loseContext();
+      }
+    } catch (e) { }
+    HW = o;
+    return o;
+  }
+  // Para quem já estava logado antes desta versão: manda a impressão uma vez (e de novo só se mudar).
+  function syncHw() {
+    if (!S.me) return;
+    var hw = hwSignals(), sig = JSON.stringify(hw);
+    if (sget('ed.hw') === sig) return;
+    api('/api/auth?action=hw', { method: 'POST', body: { hw: hw } }).then(function () { sset('ed.hw', sig); }).catch(function () { });
+  }
+
   function api(path, opts) {
     opts = opts || {};
     var init = { method: opts.method || 'GET', credentials: 'same-origin', headers: authHeaders({}) };
@@ -968,7 +1011,7 @@
     if (askingName && name.length < 2) { showCodeError('Digite seu nome.', nameIn); return; }
     var btn = askingName ? $('#nameBtn') : $('#codeBtn');
     setBusy(btn, true);
-    api('/api/auth?action=login', { method: 'POST', body: { key: v, name: name || undefined } }).then(function (d) {
+    api('/api/auth?action=login', { method: 'POST', body: { key: v, name: name || undefined, hw: hwSignals() } }).then(function (d) {
       if (d.need === 'name') {
         setBusy(btn, false);
         step.hidden = false;
@@ -978,6 +1021,7 @@
       }
       if (d.did) sset('ed.did', d.did);
       if (d.st) sset('ed.st', d.st);
+      sset('ed.hw', JSON.stringify(hwSignals()));
       return loadContent().then(pullProgress).then(function () {
         setBusy(btn, false);
         closePay();
@@ -1162,6 +1206,7 @@
     renderSkeleton();
     loadContent().then(function () {
       S.ready = true;
+      setTimeout(syncHw, 1500);
       return pullProgress();
     }).then(function () {
       refreshHome(); renderTop();
