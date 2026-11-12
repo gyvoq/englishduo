@@ -85,7 +85,7 @@
   function closeAll(except) {
     $$('.dd.open').forEach(function (d) { if (d !== except) d.classList.remove('open'); });
   }
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeAll(); H.closeConfirm(); } });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeAll(); H.closeConfirm(); H.closeLogs(); } });
 
   H.toggleDD = function (el) {
     var dd = el.closest('.dd');
@@ -240,6 +240,7 @@
     var k = esc(l.key);
     var acts = '<button class="act act-copy" data-click="copyKey" data-args=\'["' + k + '"]\'>Copiar</button>';
     if (l.status !== 'revoked') acts += '<button class="act act-revoke" data-click="askRevoke" data-args=\'["' + k + '"]\'>Revogar</button>';
+    if (l.status !== 'unused' || l.used > 0) acts += '<button class="act act-reset" data-click="openLogs" data-args=\'["' + k + '"]\'>Registros</button>';
     if (l.used > 0) acts += '<button class="act act-reset" data-click="askReset" data-args=\'["' + k + '"]\'>Aparelhos</button>';
     acts += '<button class="act act-delete" data-click="askDelete" data-args=\'["' + k + '"]\'>Excluir</button>';
     var exp = l.expiresAt ? fmt(l.expiresAt) : (l.status === 'unused' ? (l.end ? fmt(l.end) : validityText(l) + ' após ativar') : '—');
@@ -304,6 +305,57 @@
       return api('delete', { key: k }).then(function () { toast('Licença excluída.'); });
     });
   };
+
+  // ---------- registros de uso ----------
+  var EV = {
+    login: ['Entrou', 'ok'], access: ['Acessou', ''], logout: ['Saiu', ''],
+    limit: ['Bloqueado: limite de aparelhos', 'bad'], denied: ['Bloqueado', 'bad'],
+    revoke: ['Chave revogada (admin)', 'bad'], reset: ['Aparelhos liberados (admin)', '']
+  };
+  function netOf(ip) {
+    ip = String(ip || '');
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(ip)) return ip.split('.').slice(0, 3).join('.');
+    return ip.split(':').slice(0, 4).join(':');
+  }
+  function logsSummary(logs) {
+    var since = Date.now() - 30 * 86400000, nets = {}, uas = {}, devs = {}, blocked = 0;
+    logs.forEach(function (e) {
+      if (e.t < since) return;
+      if (e.ip && e.ev !== 'limit' && e.ev !== 'denied') nets[netOf(e.ip)] = 1;
+      if (e.ua && (e.ev === 'login' || e.ev === 'access')) uas[e.ua] = 1;
+      if (e.d && (e.ev === 'login' || e.ev === 'access')) devs[e.d] = 1;
+      if (e.ev === 'limit') blocked++;
+    });
+    var n = Object.keys(nets).length, u = Object.keys(uas).length, d = Object.keys(devs).length;
+    var warn = n >= 5 || blocked >= 3;
+    return '<div class="log-sum' + (warn ? ' warn' : '') + '">' +
+      '<b>Últimos 30 dias:</b> ' + d + ' ' + (d === 1 ? 'aparelho' : 'aparelhos') + ' · ' + n + ' ' + (n === 1 ? 'rede' : 'redes') + ' · ' + u + ' ' + (u === 1 ? 'navegador' : 'navegadores') + ' · ' + blocked + ' ' + (blocked === 1 ? 'bloqueio' : 'bloqueios') +
+      (warn ? '<br><span>Muitas redes ou bloqueios: pode ser chave compartilhada.</span>' : '') + '</div>';
+  }
+  H.openLogs = function (k) {
+    var box = $('#logs-list');
+    $('#logs-title').textContent = 'Registros · ' + k;
+    box.innerHTML = '<div class="empty"><span class="spin"></span>Carregando…</div>';
+    $('#logs-modal').classList.add('open');
+    api('logs', { key: k }).then(function (r) {
+      var logs = r.logs || [], cur = r.current || {};
+      if (!logs.length) { box.innerHTML = '<div class="empty">Nenhum registro ainda. Os registros começam a partir desta atualização.</div>'; return; }
+      box.innerHTML = logsSummary(logs) + logs.map(function (e) {
+        var ev = EV[e.ev] || [e.ev, ''];
+        var who = e.n || (e.d && cur[e.d]) || '';
+        var det = [];
+        if (e.how) det.push(e.how);
+        if (e.why) det.push(e.why);
+        if (e.d) det.push(e.ev === 'limit' ? 'aparelho não cadastrado' : 'aparelho #' + e.d + (cur[e.d] ? '' : ' (removido)'));
+        if (e.ua) det.push(e.ua);
+        if (e.ip) det.push('IP ' + e.ip);
+        return '<div class="log-row"><time>' + fmtTime(e.t) + '</time><div><span class="log-ev ' + ev[1] + '">' + esc(ev[0]) + '</span>' +
+          (who ? ' <b>' + esc(who) + '</b>' : '') + '<p>' + esc(det.join(' · ')) + '</p></div></div>';
+      }).join('');
+    }).catch(function (e) { if (!guard(e)) box.innerHTML = '<div class="empty">' + esc(e.message) + '</div>'; });
+  };
+  H.closeLogs = function () { $('#logs-modal').classList.remove('open'); };
+  $('#logs-modal').addEventListener('click', function (e) { if (e.target.id === 'logs-modal') H.closeLogs(); });
 
   // ---------- chat ----------
   H.loadChat = function () {
