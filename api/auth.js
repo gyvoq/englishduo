@@ -1,6 +1,7 @@
 import { wrap, send, body, clientIp } from '../lib/http.js';
 import { redis, rateLimit } from '../lib/redis.js';
-import { student, deviceId, startSession, endSession, meOf } from '../lib/session.js';
+import { student, readDevice, newDeviceId, setDevice, startSession, endSession, meOf } from '../lib/session.js';
+import { cleanHw, findSameDevice, touchMember } from '../lib/device.js';
 import { checkName } from '../lib/moderation.js';
 import { normKey, getLicense, saveLicense, statusOf, addMonths, members } from '../lib/licenses.js';
 
@@ -22,14 +23,18 @@ async function login(req, res) {
   if (st === 'expired') return send(res, 403, { error: 'Esta chave expirou.' });
 
   const now = Date.now();
-  const device = deviceId(req, res);
   if (st === 'unused' && lic.start && now < lic.start) return send(res, 403, { error: 'Esta chave vale a partir de ' + fmt(lic.start) + '.' });
 
   const list = members(lic);
-  const mine = list.find((m) => m.id === device);
+  const hw = cleanHw(b.hw);
+  const ip = clientIp(req);
+  // 1) mesmo navegador de antes (cookie)  2) outro navegador do MESMO aparelho (hardware + rede)  3) aparelho novo
+  let mine = list.find((m) => m.id === readDevice(req)) || findSameDevice(list, hw, ip, now);
+  const device = mine ? mine.id : readDevice(req) || newDeviceId();
   if (!mine && list.length >= (lic.devices || 1)) {
-    return send(res, 403, { error: 'Limite de aparelhos desta chave atingido. Fale com o suporte.' });
+    return send(res, 403, { error: 'Limite de aparelhos desta chave atingido. Se este é um aparelho que você já usou, abra pelo mesmo navegador ou pela mesma internet (Wi-Fi) de antes. Se não for, fale com o suporte.' });
   }
+  setDevice(req, res, device);
 
   // Todo login pede o nome de quem está entrando neste aparelho.
   const name = cleanName(b.name);
@@ -43,7 +48,8 @@ async function login(req, res) {
     lic.expiresAt = lic.months ? addMonths(now, lic.months) : lic.end || null;
   }
   if (mine) mine.name = name;
-  else list.push({ id: device, name, at: now });
+  else { mine = { id: device, name, at: now }; list.push(mine); }
+  touchMember(mine, hw, ip, now);
   delete lic.deviceIds;
   delete lic.name;
   await saveLicense(lic);
@@ -59,6 +65,19 @@ export default wrap(async (req, res) => {
 
   if (req.method === 'POST' && action === 'login') return login(req, res);
   if (req.method === 'POST' && action === 'logout') { endSession(res); return send(res, 200, { ok: true }); }
+
+  // Quem já estava logado manda a impressão do aparelho (para ser reconhecido em outros navegadores).
+  if (req.method === 'POST' && action === 'hw') {
+    const st = await student(req, res);
+    if (!st) return send(res, 401, { error: 'Entre com sua chave.' });
+    if (!(await rateLimit('hw:' + st.key + ':' + st.device, 20, 3600))) return send(res, 429, { error: 'Muitas tentativas.' });
+    const hw = cleanHw((await body(req)).hw);
+    if (!hw) return send(res, 400, { error: 'Dados inválidos.' });
+    const lic = await getLicense(st.key);
+    const me = lic && members(lic).find((m) => m.id === st.device);
+    if (me && touchMember(me, hw, clientIp(req))) await saveLicense(lic);
+    return send(res, 200, { ok: true });
+  }
 
   if (action === 'progress') {
     const st = await student(req, res);
