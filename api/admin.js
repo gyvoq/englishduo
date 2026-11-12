@@ -2,6 +2,7 @@ import { wrap, send, body, clientIp } from '../lib/http.js';
 import { redis, pipeline, rateLimit } from '../lib/redis.js';
 import { content } from '../lib/content.js';
 import { isAdmin, startAdmin, endAdmin, safeEqual } from '../lib/session.js';
+import { getLogs, logEvent } from '../lib/logs.js';
 import { genKey, normKey, getLicense, saveLicense, createLicense, listLicenses, deleteLicense, statusOf, dayStart, dayEnd, members } from '../lib/licenses.js';
 
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
@@ -48,6 +49,7 @@ const actions = {
     if (!l) return { status: 404, error: 'Chave não encontrada.' };
     l.revoked = true; l.revokedAt = Date.now();
     await saveLicense(l);
+    await logEvent(l.key, 'revoke', null);
     return { ok: true };
   },
 
@@ -57,6 +59,7 @@ const actions = {
     l.members = [];
     delete l.deviceIds;
     await saveLicense(l);
+    await logEvent(l.key, 'reset', null);
     return { ok: true };
   },
 
@@ -66,6 +69,14 @@ const actions = {
     const l = await getLicense(k);
     await deleteLicense(k, l ? members(l).map((m) => m.id) : []);
     return { ok: true };
+  },
+
+  async logs(b) {
+    const l = await getLicense(normKey(b.key));
+    if (!l) return { status: 404, error: 'Chave não encontrada.' };
+    const names = {};
+    members(l).forEach((m) => { names[m.id.slice(0, 6)] = m.name; });
+    return { key: l.key, devices: l.devices || 1, current: names, logs: await getLogs(l.key) };
   },
 
   async chatList() {
