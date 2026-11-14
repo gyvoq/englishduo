@@ -5,96 +5,340 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Quiz · Aula 1 · Inglês para Comissários</title>
 <style>
-  :root{
-    --bg:#f7f8fb; --card:#fff; --ink:#1b2433; --muted:#5b6577; --blue:#1f5fbf; --soft:#e8eefc;
-    --ok:#1a8f5a; --okbg:#e3f6ec; --bad:#c8372d; --badbg:#fde8e6; --line:#dfe4ee;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
-  .wrap{max-width:720px;margin:0 auto;padding:20px 16px 48px}
-  header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
-  h1{font-family:Georgia,serif;font-size:clamp(20px,4.5vw,28px);margin:0}
-  .score{font-weight:700;color:var(--blue);background:var(--soft);padding:6px 12px;border-radius:999px;white-space:nowrap;font-size:14px}
-  .bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:18px}
-  .bar i{display:block;height:100%;width:0;background:var(--blue);transition:width .4s ease}
-  .card{background:var(--card);border-radius:16px;padding:22px;box-shadow:0 2px 10px rgba(20,30,60,.06);animation:in .35s ease}
-  @keyframes in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-  .tag{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--blue)}
-  .q{font-size:clamp(18px,4vw,22px);font-weight:700;margin:6px 0 4px;line-height:1.35}
-  .sub{color:var(--muted);font-size:14px;margin-bottom:16px}
-  .opts{display:grid;gap:10px}
-  .opt{all:unset;cursor:pointer;display:flex;gap:12px;align-items:flex-start;padding:14px;border:2px solid var(--line);border-radius:12px;background:#fff;transition:border-color .15s,background .15s,transform .1s;font-size:16px;line-height:1.35}
-  .opt:hover:not([disabled]){border-color:var(--blue);background:var(--soft)}
-  .opt:active:not([disabled]){transform:scale(.99)}
-  .opt:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
-  .opt b{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--soft);color:var(--blue);font-size:13px}
-  .opt[disabled]{cursor:default}
-  .opt .why{display:none;font-size:14px;color:var(--muted);margin-top:6px}
-  .opt.show .why{display:block}
-  .opt.ok{border-color:var(--ok);background:var(--okbg)}
-  .opt.ok b{background:var(--ok);color:#fff}
-  .opt.bad{border-color:var(--bad);background:var(--badbg);animation:shake .4s}
-  .opt.bad b{background:var(--bad);color:#fff}
-  .opt.dim{opacity:.75}
-  .opt.ok.picked{animation:pop .45s}
-  @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
-  @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.04)}100%{transform:scale(1)}}
-  .fb{margin-top:16px;padding:14px;border-radius:12px;font-size:15px;line-height:1.45;display:none;animation:in .3s}
-  .fb.ok{display:block;background:var(--okbg);border-left:5px solid var(--ok)}
-  .fb.bad{display:block;background:var(--badbg);border-left:5px solid var(--bad)}
-  .fb strong{display:block;font-size:17px;margin-bottom:4px}
-  .pron{display:inline-block;margin-top:6px;font-style:italic;color:var(--muted)}
-  .actions{display:flex;justify-content:flex-end;margin-top:16px;gap:10px;flex-wrap:wrap}
-  .btn{all:unset;cursor:pointer;background:var(--blue);color:#fff;font-weight:700;padding:12px 20px;border-radius:10px;text-align:center}
-  .btn.ghost{background:var(--soft);color:var(--blue)}
-  .btn:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
-  .hidden{display:none!important}
-  .big{font-size:clamp(40px,10vw,64px);font-weight:800;color:var(--blue);text-align:center;margin:6px 0}
-  .msg{text-align:center;color:var(--muted);margin-bottom:18px}
-  .key{display:grid;gap:10px;margin-top:10px}
-  .k{border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.45}
-  .k .kq{font-weight:700;margin-bottom:4px}
-  .k.ok{border-left:5px solid var(--ok)} .k.bad{border-left:5px solid var(--bad)}
-  .k .you{color:var(--bad)} .k .ans{color:var(--ok);font-weight:600}
-  .toast{position:fixed;left:50%;top:22px;transform:translate(-50%,-80px);padding:10px 18px;border-radius:999px;font-weight:800;color:#fff;transition:transform .3s cubic-bezier(.3,1.6,.5,1);z-index:9;pointer-events:none}
-  .toast.on{transform:translate(-50%,0)}
-  canvas{position:fixed;inset:0;pointer-events:none;z-index:8}
-  @media (max-width:480px){.card{padding:16px}.opt{padding:12px;font-size:15px}.actions .btn{flex:1}}
-  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+:root{--bg:#f7f8fb;--card:#fff;--ink:#1b2433;--muted:#5b6577;--blue:#1f5fbf;--soft:#e8eefc;--ok:#1a8f5a;--okbg:#e3f6ec;--bad:#c8372d;--badbg:#fde8e6;--line:#dfe4ee}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);counter-reset:acertos respondidas}
+.wrap{max-width:720px;margin:0 auto;padding:20px 16px 110px}
+h1{font-family:Georgia,serif;font-size:clamp(22px,5vw,30px);margin:0 0 4px}
+.intro{color:var(--muted);margin:0 0 18px}
+.card{background:var(--card);border:0;border-radius:16px;padding:20px;margin:0 0 16px;box-shadow:0 2px 10px rgba(20,30,60,.06);min-width:0}
+.tag{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--blue)}
+.q{font-size:clamp(17px,4vw,21px);font-weight:700;margin:6px 0 14px;padding:0;line-height:1.35;float:left;width:100%}
+.opts{clear:both;display:grid;gap:10px}
+input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+label{position:relative;cursor:pointer;display:flex;gap:12px;align-items:flex-start;padding:14px;border:2px solid var(--line);border-radius:12px;background:#fff;transition:border-color .15s,background .15s,opacity .2s;font-size:16px;line-height:1.35}
+label:hover{border-color:var(--blue);background:var(--soft)}
+label b{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--soft);color:var(--blue);font-size:13px}
+.why{display:none;font-size:14px;color:var(--muted);margin-top:6px}
+.t{display:block}
+input:focus-visible+label{outline:3px solid var(--blue);outline-offset:2px}
+
+/* depois de responder: trava a questão e mostra explicações */
+.qq:has(input:checked) label{pointer-events:none}
+.qq:has(input:checked) .why{display:block}
+.qq:has(input:checked) label.bad{opacity:.7}
+.qq:has(input:checked) label.ok{border-color:var(--ok);background:var(--okbg);opacity:1}
+.qq:has(input:checked) label.ok b{background:var(--ok);color:#fff}
+input.bad:checked+label{border-color:var(--bad);background:var(--badbg);opacity:1;animation:shake .45s}
+input.bad:checked+label b{background:var(--bad);color:#fff}
+input.ok:checked+label{animation:pop .5s}
+
+/* confete no acerto */
+input.ok:checked+label::after{content:"";position:absolute;left:50%;top:50%;width:8px;height:8px;border-radius:2px;pointer-events:none;
+  animation:boom .9s ease-out forwards;
+  box-shadow:0 0 #1f5fbf,0 0 #1a8f5a,0 0 #f2b705,0 0 #e8505b,0 0 #7b5cd6,0 0 #1f5fbf,0 0 #1a8f5a,0 0 #f2b705,0 0 #e8505b,0 0 #7b5cd6,0 0 #f2b705,0 0 #1f5fbf}
+@keyframes boom{
+  0%{opacity:1}
+  100%{opacity:0;box-shadow:-140px -70px #1f5fbf,140px -60px #1a8f5a,-90px -110px #f2b705,100px -105px #e8505b,-30px -130px #7b5cd6,40px -125px #1f5fbf,-170px -10px #1a8f5a,170px -20px #f2b705,-120px 40px #e8505b,125px 45px #7b5cd6,-60px 60px #f2b705,70px 55px #1f5fbf}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.04)}100%{transform:scale(1)}}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.fb{display:none;margin-top:14px;padding:14px;border-radius:12px;font-size:15px;line-height:1.45;animation:in .3s}
+.fb strong{display:block;font-size:17px;margin-bottom:4px}
+.fb-ok{background:var(--okbg);border-left:5px solid var(--ok)}
+.fb-bad{background:var(--badbg);border-left:5px solid var(--bad)}
+.qq:has(input.ok:checked) .fb-ok{display:block}
+.qq:has(input.bad:checked) .fb-bad{display:block}
+.pron{display:block;margin-top:6px;font-style:italic;color:var(--muted)}
+
+/* placar */
+input.ok:checked{counter-increment:acertos respondidas}
+input.bad:checked{counter-increment:respondidas}
+.bar{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);border-top:1px solid var(--line);padding:12px 16px;z-index:5}
+.bar .in{max-width:720px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.bar .s::after{content:"✅ " counter(acertos) " acertos · " counter(respondidas) "/20 respondidas";font-weight:700;color:var(--blue);font-size:15px}
+button{all:unset;cursor:pointer;background:var(--blue);color:#fff;font-weight:700;padding:10px 16px;border-radius:10px;font-size:14px}
+details{background:var(--card);border-radius:16px;padding:18px 20px;box-shadow:0 2px 10px rgba(20,30,60,.06)}
+summary{cursor:pointer;font-weight:800;font-size:18px;color:var(--blue)}
+details ol{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:10px}
+details li{border:1px solid var(--line);border-left:5px solid var(--ok);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.45}
+.ans{color:var(--ok);font-weight:700}
+@media (max-width:480px){.card{padding:16px}label{padding:12px;font-size:15px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<canvas id="fx"></canvas>
-<div class="toast" id="toast"></div>
-<div class="wrap">
-  <header>
-    <h1>Quiz · Aula 1 ✈️</h1>
-    <span class="score" id="score">0 / 0</span>
-  </header>
-  <div class="bar"><i id="prog"></i></div>
-
-  <section class="card" id="quiz">
-    <div class="tag" id="tag"></div>
-    <div class="q" id="q"></div>
-    <div class="sub" id="sub"></div>
-    <div class="opts" id="opts"></div>
-    <div class="fb" id="fb"></div>
-    <div class="actions"><button class="btn hidden" id="next">Próxima →</button></div>
-  </section>
-
-  <section class="card hidden" id="end">
-    <div class="tag" style="text-align:center">Resultado final</div>
-    <div class="big" id="final"></div>
-    <div class="msg" id="finalMsg"></div>
-    <div class="actions" style="justify-content:center">
-      <button class="btn" id="restart">Refazer quiz</button>
-      <button class="btn ghost" id="wrongOnly">Refazer só os erros</button>
-    </div>
-    <h2 style="font-size:18px;margin:24px 0 4px">Gabarito</h2>
-    <div class="key" id="key"></div>
-  </section>
+<form class="wrap">
+<h1>Quiz · Aula 1 ✈️</h1>
+<p class="intro">Toque na resposta. Você vê na hora se acertou e o porquê de cada alternativa.</p>
+<fieldset class="card qq">
+<div class="tag">Questão 1 de 20 · Cumprimentos</div>
+<legend class="q">Como se diz “Bem-vindo a bordo!”?</legend>
+<div class="opts">
+<input type="radio" name="q1" id="q10" class="ok"><label for="q10" class="ok"><b>A</b><span><span class="t">Welcome aboard!</span><span class="why">Correto. “Aboard” significa “a bordo”. É a frase padrão para receber o passageiro na porta.</span></span></label>
+<input type="radio" name="q1" id="q11" class="bad"><label for="q11" class="bad"><b>B</b><span><span class="t">Welcome to board!</span><span class="why">“Board” sozinho é o verbo “embarcar” ou a prancha. “To board” = “para embarcar”, não “a bordo”.</span></span></label>
+<input type="radio" name="q1" id="q12" class="bad"><label for="q12" class="bad"><b>C</b><span><span class="t">Good aboard!</span><span class="why">“Good” não é usado para dar boas-vindas. O certo é “Welcome”.</span></span></label>
+<input type="radio" name="q1" id="q13" class="bad"><label for="q13" class="bad"><b>D</b><span><span class="t">Welcome in the plane!</span><span class="why">Soa traduzido do português. Ninguém fala assim a bordo; o natural é “Welcome aboard!”.</span></span></label>
 </div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. “Aboard” significa “a bordo”. É a frase padrão para receber o passageiro na porta.<span class="pron">🗣️ Pronúncia: uélcam abórd</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>A</b>: “Welcome aboard!”. Correto. “Aboard” significa “a bordo”. É a frase padrão para receber o passageiro na porta.<span class="pron">🗣️ Pronúncia: uélcam abórd</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 2 de 20 · Cumprimentos</div>
+<legend class="q">O passageiro diz “Nice to meet you.” O que isso significa?</legend>
+<div class="opts">
+<input type="radio" name="q2" id="q20" class="bad"><label for="q20" class="bad"><b>A</b><span><span class="t">Como vai você?</span><span class="why">“Como vai você?” é “How are you?”.</span></span></label>
+<input type="radio" name="q2" id="q21" class="bad"><label for="q21" class="bad"><b>B</b><span><span class="t">Bom dia!</span><span class="why">“Bom dia” é “Good morning”.</span></span></label>
+<input type="radio" name="q2" id="q22" class="ok"><label for="q22" class="ok"><b>C</b><span><span class="t">Prazer em conhecer.</span><span class="why">Correto. Usado quando você conhece alguém pela primeira vez.</span></span></label>
+<input type="radio" name="q2" id="q23" class="bad"><label for="q23" class="bad"><b>D</b><span><span class="t">Até logo.</span><span class="why">“Até logo” é “See you later”.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. Usado quando você conhece alguém pela primeira vez.<span class="pron">🗣️ Pronúncia: náis tu mít iu</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>C</b>: “Prazer em conhecer.”. Correto. Usado quando você conhece alguém pela primeira vez.<span class="pron">🗣️ Pronúncia: náis tu mít iu</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 3 de 20 · Apresentação</div>
+<legend class="q">Qual frase está correta para dizer sua idade?</legend>
+<div class="opts">
+<input type="radio" name="q3" id="q30" class="bad"><label for="q30" class="bad"><b>A</b><span><span class="t">I have 25 years.</span><span class="why">Erro clássico de brasileiro! Em inglês a idade usa o verbo “to be”, não “have”.</span></span></label>
+<input type="radio" name="q3" id="q31" class="ok"><label for="q31" class="ok"><b>B</b><span><span class="t">I’m 25 years old.</span><span class="why">Correto. Em inglês você “é” a idade: I am (I’m) + número + years old.</span></span></label>
+<input type="radio" name="q3" id="q32" class="bad"><label for="q32" class="bad"><b>C</b><span><span class="t">I’m have 25 years old.</span><span class="why">Mistura dois verbos (am + have). Só o “I’m” é necessário.</span></span></label>
+<input type="radio" name="q3" id="q33" class="bad"><label for="q33" class="bad"><b>D</b><span><span class="t">My age have 25.</span><span class="why">Gramática errada e soa estranho. Use “I’m 25 years old”.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. Em inglês você “é” a idade: I am (I’m) + número + years old.<span class="pron">🗣️ Pronúncia: áim … iérs ôuld</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>B</b>: “I’m 25 years old.”. Correto. Em inglês você “é” a idade: I am (I’m) + número + years old.<span class="pron">🗣️ Pronúncia: áim … iérs ôuld</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 4 de 20 · Apresentação</div>
+<legend class="q">Como dizer “Quero trabalhar como comissário(a)”?</legend>
+<div class="opts">
+<input type="radio" name="q4" id="q40" class="bad"><label for="q40" class="bad"><b>A</b><span><span class="t">I want work like flight attendant.</span><span class="why">Faltam o “to” antes de “work” e o artigo “a”. E “like” aqui significa “parecido com”, não “como profissão”.</span></span></label>
+<input type="radio" name="q4" id="q41" class="bad"><label for="q41" class="bad"><b>B</b><span><span class="t">I want to working as a flight attendant.</span><span class="why">Depois de “want to” o verbo fica na forma base: “work”, não “working”.</span></span></label>
+<input type="radio" name="q4" id="q42" class="bad"><label for="q42" class="bad"><b>C</b><span><span class="t">I wanting to work as flight attendant.</span><span class="why">“I wanting” não existe. O certo é “I want”. Também falta o artigo “a”.</span></span></label>
+<input type="radio" name="q4" id="q43" class="ok"><label for="q43" class="ok"><b>D</b><span><span class="t">I want to work as a flight attendant.</span><span class="why">Correto. want to + verbo, “as” para profissão e o artigo “a” antes da profissão.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. want to + verbo, “as” para profissão e o artigo “a” antes da profissão.<span class="pron">🗣️ Pronúncia: ai uânt tu uârk as a flait atêndant</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>D</b>: “I want to work as a flight attendant.”. Correto. want to + verbo, “as” para profissão e o artigo “a” antes da profissão.<span class="pron">🗣️ Pronúncia: ai uânt tu uârk as a flait atêndant</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 5 de 20 · Quando não sabe a palavra</div>
+<legend class="q">Você não entendeu o passageiro. O que dizer?</legend>
+<div class="opts">
+<input type="radio" name="q5" id="q50" class="ok"><label for="q50" class="ok"><b>A</b><span><span class="t">Could you repeat that?</span><span class="why">Correto e educado: “Pode repetir?”. Também serve “Could you speak more slowly?”.</span></span></label>
+<input type="radio" name="q5" id="q51" class="bad"><label for="q51" class="bad"><b>B</b><span><span class="t">What you said?</span><span class="why">Gramática errada e soa rude. Prefira “Could you repeat that?”.</span></span></label>
+<input type="radio" name="q5" id="q52" class="bad"><label for="q52" class="bad"><b>C</b><span><span class="t">Repeat!</span><span class="why">Imperativo seco, soa grosseiro com passageiro.</span></span></label>
+<input type="radio" name="q5" id="q53" class="bad"><label for="q53" class="bad"><b>D</b><span><span class="t">I don’t speak.</span><span class="why">Significa “eu não falo”. Não ajuda o passageiro e nem é verdade 😉</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto e educado: “Pode repetir?”. Também serve “Could you speak more slowly?”.<span class="pron">🗣️ Pronúncia: cud iu ripít dét?</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>A</b>: “Could you repeat that?”. Correto e educado: “Pode repetir?”. Também serve “Could you speak more slowly?”.<span class="pron">🗣️ Pronúncia: cud iu ripít dét?</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 6 de 20 · Quando não sabe a palavra</div>
+<legend class="q">Como perguntar “O que significa ‘aisle’?”</legend>
+<div class="opts">
+<input type="radio" name="q6" id="q60" class="bad"><label for="q60" class="bad"><b>A</b><span><span class="t">What means “aisle”?</span><span class="why">Em perguntas com verbo comum, o inglês precisa do auxiliar “does”.</span></span></label>
+<input type="radio" name="q6" id="q61" class="bad"><label for="q61" class="bad"><b>B</b><span><span class="t">What is mean “aisle”?</span><span class="why">“is” + “mean” não combina. O auxiliar certo é “does”.</span></span></label>
+<input type="radio" name="q6" id="q62" class="ok"><label for="q62" class="ok"><b>C</b><span><span class="t">What does “aisle” mean?</span><span class="why">Correto: What + does + palavra + mean?</span></span></label>
+<input type="radio" name="q6" id="q63" class="bad"><label for="q63" class="bad"><b>D</b><span><span class="t">How do you say “aisle”?</span><span class="why">Isso pergunta como se diz algo em inglês, não o que significa.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto: What + does + palavra + mean?<span class="pron">🗣️ Pronúncia: uót dâz … min?</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>C</b>: “What does “aisle” mean?”. Correto: What + does + palavra + mean?<span class="pron">🗣️ Pronúncia: uót dâz … min?</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 7 de 20 · Recebendo o passageiro</div>
+<legend class="q">Qual é a forma educada de pedir o cartão de embarque?</legend>
+<div class="opts">
+<input type="radio" name="q7" id="q70" class="bad"><label for="q70" class="bad"><b>A</b><span><span class="t">Give me your boarding pass.</span><span class="why">Ordem direta, sem “please”. Soa rude para um comissário.</span></span></label>
+<input type="radio" name="q7" id="q71" class="ok"><label for="q71" class="ok"><b>B</b><span><span class="t">May I see your boarding pass, please?</span><span class="why">Correto. “May I…?” é a forma mais educada de pedir permissão.</span></span></label>
+<input type="radio" name="q7" id="q72" class="bad"><label for="q72" class="bad"><b>C</b><span><span class="t">Can you see my boarding pass?</span><span class="why">Inverte o sentido: você está pedindo para o passageiro ver o SEU cartão.</span></span></label>
+<input type="radio" name="q7" id="q73" class="bad"><label for="q73" class="bad"><b>D</b><span><span class="t">Where is your ticket boarding?</span><span class="why">Ordem errada das palavras: é “boarding pass”, e a pergunta fica estranha.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. “May I…?” é a forma mais educada de pedir permissão.<span class="pron">🗣️ Pronúncia: mei ai si iór bórdin pés, plíz?</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>B</b>: “May I see your boarding pass, please?”. Correto. “May I…?” é a forma mais educada de pedir permissão.<span class="pron">🗣️ Pronúncia: mei ai si iór bórdin pés, plíz?</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 8 de 20 · Recebendo o passageiro</div>
+<legend class="q">O passageiro entrega o cartão e diz:</legend>
+<div class="opts">
+<input type="radio" name="q8" id="q80" class="bad"><label for="q80" class="bad"><b>A</b><span><span class="t">Here you are going.</span><span class="why">Não é uma expressão em inglês.</span></span></label>
+<input type="radio" name="q8" id="q81" class="bad"><label for="q81" class="bad"><b>B</b><span><span class="t">You go here.</span><span class="why">Significa “você vai aqui”, não é entregar algo.</span></span></label>
+<input type="radio" name="q8" id="q82" class="bad"><label for="q82" class="bad"><b>C</b><span><span class="t">Take it you.</span><span class="why">Gramática errada.</span></span></label>
+<input type="radio" name="q8" id="q83" class="ok"><label for="q83" class="ok"><b>D</b><span><span class="t">Here you go.</span><span class="why">Correto: “Aqui está.” Usado ao entregar algo. “Here you are” também serve.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto: “Aqui está.” Usado ao entregar algo. “Here you are” também serve.<span class="pron">🗣️ Pronúncia: ríar iu gôu</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>D</b>: “Here you go.”. Correto: “Aqui está.” Usado ao entregar algo. “Here you are” também serve.<span class="pron">🗣️ Pronúncia: ríar iu gôu</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 9 de 20 · Assentos e números</div>
+<legend class="q">“Your seat is 12A, on the left.” Onde fica o assento?</legend>
+<div class="opts">
+<input type="radio" name="q9" id="q90" class="ok"><label for="q90" class="ok"><b>A</b><span><span class="t">Fileira 12, assento A, à esquerda.</span><span class="why">Correto. “Left” = esquerda, “right” = direita.</span></span></label>
+<input type="radio" name="q9" id="q91" class="bad"><label for="q91" class="bad"><b>B</b><span><span class="t">Fileira 12, assento A, à direita.</span><span class="why">“Right” é direita. Aqui a frase diz “left” = esquerda.</span></span></label>
+<input type="radio" name="q9" id="q92" class="bad"><label for="q92" class="bad"><b>C</b><span><span class="t">Fileira 2, assento 1A, à esquerda.</span><span class="why">“Twelve” é 12. O número inteiro é a fileira e a letra é o assento.</span></span></label>
+<input type="radio" name="q9" id="q93" class="bad"><label for="q93" class="bad"><b>D</b><span><span class="t">Assento 12, na saída.</span><span class="why">Não fala nada sobre saída (“exit”).</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. “Left” = esquerda, “right” = direita.<span class="pron">🗣️ Pronúncia: iór síit is tuélv êi, on dê léft</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>A</b>: “Fileira 12, assento A, à esquerda.”. Correto. “Left” = esquerda, “right” = direita.<span class="pron">🗣️ Pronúncia: iór síit is tuélv êi, on dê léft</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 10 de 20 · Assentos e números</div>
+<legend class="q">Qual é a diferença entre “fifteen” e “fifty”?</legend>
+<div class="opts">
+<input type="radio" name="q10" id="q100" class="bad"><label for="q100" class="bad"><b>A</b><span><span class="t">Nenhuma, é o mesmo número.</span><span class="why">São números diferentes, por isso é tão importante a pronúncia!</span></span></label>
+<input type="radio" name="q10" id="q101" class="bad"><label for="q101" class="bad"><b>B</b><span><span class="t">Fifteen = 50 e fifty = 15.</span><span class="why">Invertido. “-teen” é de 13 a 19 e “-ty” são as dezenas.</span></span></label>
+<input type="radio" name="q10" id="q102" class="ok"><label for="q102" class="ok"><b>C</b><span><span class="t">Fifteen = 15 (acento no fim) e fifty = 50 (acento no começo).</span><span class="why">Correto: fifTEEN vs FIFty. A sílaba forte muda tudo na hora de dizer o assento.</span></span></label>
+<input type="radio" name="q10" id="q103" class="bad"><label for="q103" class="bad"><b>D</b><span><span class="t">Fifteen = 5 e fifty = 50.</span><span class="why">5 é “five”. Fifteen é 15.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto: fifTEEN vs FIFty. A sílaba forte muda tudo na hora de dizer o assento.<span class="pron">🗣️ Pronúncia: fifTÍIN · FÍFti</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>C</b>: “Fifteen = 15 (acento no fim) e fifty = 50 (acento no começo).”. Correto: fifTEEN vs FIFty. A sílaba forte muda tudo na hora de dizer o assento.<span class="pron">🗣️ Pronúncia: fifTÍIN · FÍFti</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 11 de 20 · Assentos e números</div>
+<legend class="q">“Window or aisle?” O que o passageiro está escolhendo?</legend>
+<div class="opts">
+<input type="radio" name="q11" id="q110" class="bad"><label for="q110" class="bad"><b>A</b><span><span class="t">Janela ou saída</span><span class="why">“Exit” é saída. “Aisle” é corredor.</span></span></label>
+<input type="radio" name="q11" id="q111" class="ok"><label for="q111" class="ok"><b>B</b><span><span class="t">Janela ou corredor</span><span class="why">Correto. E atenção: o “s” de “aisle” é mudo: “áil”.</span></span></label>
+<input type="radio" name="q11" id="q112" class="bad"><label for="q112" class="bad"><b>C</b><span><span class="t">Frente ou fundo</span><span class="why">Frente é “front”, fundo é “back”.</span></span></label>
+<input type="radio" name="q11" id="q113" class="bad"><label for="q113" class="bad"><b>D</b><span><span class="t">Primeira ou econômica</span><span class="why">Isso seria “first class or economy”.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. E atenção: o “s” de “aisle” é mudo: “áil”.<span class="pron">🗣️ Pronúncia: uíndou or áil?</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>B</b>: “Janela ou corredor”. Correto. E atenção: o “s” de “aisle” é mudo: “áil”.<span class="pron">🗣️ Pronúncia: uíndou or áil?</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 12 de 20 · Bebidas e refeições</div>
+<legend class="q">Como oferecer algo para beber de forma educada?</legend>
+<div class="opts">
+<input type="radio" name="q12" id="q120" class="bad"><label for="q120" class="bad"><b>A</b><span><span class="t">Do you want drink?</span><span class="why">Falta o “to/a” e “do you want” é mais direto. A bordo use “Would you like”.</span></span></label>
+<input type="radio" name="q12" id="q121" class="bad"><label for="q121" class="bad"><b>B</b><span><span class="t">You like something drink?</span><span class="why">Faltam o auxiliar e o “to”. Fica “Would you like something to drink?”.</span></span></label>
+<input type="radio" name="q12" id="q122" class="bad"><label for="q122" class="bad"><b>C</b><span><span class="t">Want something for drinking?</span><span class="why">Informal e gramaticalmente incompleto.</span></span></label>
+<input type="radio" name="q12" id="q123" class="ok"><label for="q123" class="ok"><b>D</b><span><span class="t">Would you like something to drink?</span><span class="why">Correto. “Would you like…?” é a forma educada de oferecer.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. “Would you like…?” é a forma educada de oferecer.<span class="pron">🗣️ Pronúncia: uud iu laik sâmthin tu drínk?</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>D</b>: “Would you like something to drink?”. Correto. “Would you like…?” é a forma educada de oferecer.<span class="pron">🗣️ Pronúncia: uud iu laik sâmthin tu drínk?</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 13 de 20 · Bebidas e refeições</div>
+<legend class="q">Você entrega a refeição. O que dizer?</legend>
+<div class="opts">
+<input type="radio" name="q13" id="q130" class="ok"><label for="q130" class="ok"><b>A</b><span><span class="t">Here you are. Enjoy your meal!</span><span class="why">Correto: “Aqui está. Bom apetite!”</span></span></label>
+<input type="radio" name="q13" id="q131" class="bad"><label for="q131" class="bad"><b>B</b><span><span class="t">Take your food.</span><span class="why">Soa seco e mandão.</span></span></label>
+<input type="radio" name="q13" id="q132" class="bad"><label for="q132" class="bad"><b>C</b><span><span class="t">Good food for you!</span><span class="why">Não é uma expressão em inglês.</span></span></label>
+<input type="radio" name="q13" id="q133" class="bad"><label for="q133" class="bad"><b>D</b><span><span class="t">Eat well, please.</span><span class="why">Estranho. O natural é “Enjoy your meal!”.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto: “Aqui está. Bom apetite!”<span class="pron">🗣️ Pronúncia: ríar iu ar. endjói iór míl</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>A</b>: “Here you are. Enjoy your meal!”. Correto: “Aqui está. Bom apetite!”<span class="pron">🗣️ Pronúncia: ríar iu ar. endjói iór míl</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 14 de 20 · Segurança</div>
+<legend class="q">“Please fasten your seatbelt.” O que o passageiro deve fazer?</legend>
+<div class="opts">
+<input type="radio" name="q14" id="q140" class="bad"><label for="q140" class="bad"><b>A</b><span><span class="t">Desligar o celular</span><span class="why">Isso é “Please turn off your phone.”.</span></span></label>
+<input type="radio" name="q14" id="q141" class="bad"><label for="q141" class="bad"><b>B</b><span><span class="t">Voltar o assento para cima</span><span class="why">Isso é “Please put your seat upright.”.</span></span></label>
+<input type="radio" name="q14" id="q142" class="ok"><label for="q142" class="ok"><b>C</b><span><span class="t">Afivelar o cinto</span><span class="why">Correto. “Fasten” = afivelar/prender. O “t” é mudo: “fásen”.</span></span></label>
+<input type="radio" name="q14" id="q143" class="bad"><label for="q143" class="bad"><b>D</b><span><span class="t">Fechar a mesinha</span><span class="why">Isso é “Please keep your tray table closed.”.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. “Fasten” = afivelar/prender. O “t” é mudo: “fásen”.<span class="pron">🗣️ Pronúncia: plíz fásen iór síit bélt</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>C</b>: “Afivelar o cinto”. Correto. “Fasten” = afivelar/prender. O “t” é mudo: “fásen”.<span class="pron">🗣️ Pronúncia: plíz fásen iór síit bélt</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 15 de 20 · Segurança</div>
+<legend class="q">Como dizer “Mantenha a mesinha fechada”?</legend>
+<div class="opts">
+<input type="radio" name="q15" id="q150" class="bad"><label for="q150" class="bad"><b>A</b><span><span class="t">Please close your table tray.</span><span class="why">A ordem é “tray table” (mesinha de bandeja), não “table tray”.</span></span></label>
+<input type="radio" name="q15" id="q151" class="ok"><label for="q151" class="ok"><b>B</b><span><span class="t">Please keep your tray table closed.</span><span class="why">Correto. Keep + objeto + closed = “mantenha … fechado”.</span></span></label>
+<input type="radio" name="q15" id="q152" class="bad"><label for="q152" class="bad"><b>C</b><span><span class="t">Please put your seat upright.</span><span class="why">Isso é sobre o encosto da poltrona, não a mesinha.</span></span></label>
+<input type="radio" name="q15" id="q153" class="bad"><label for="q153" class="bad"><b>D</b><span><span class="t">Please turn off your table.</span><span class="why">“Turn off” é desligar aparelho. Mesinha não se desliga 🙂</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. Keep + objeto + closed = “mantenha … fechado”.<span class="pron">🗣️ Pronúncia: plíz kíp iór trêi têibol clôuzd</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>B</b>: “Please keep your tray table closed.”. Correto. Keep + objeto + closed = “mantenha … fechado”.<span class="pron">🗣️ Pronúncia: plíz kíp iór trêi têibol clôuzd</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 16 de 20 · Pedidos</div>
+<legend class="q">“Where is the restroom?” Qual a melhor resposta?</legend>
+<div class="opts">
+<input type="radio" name="q16" id="q160" class="bad"><label for="q160" class="bad"><b>A</b><span><span class="t">About two hours.</span><span class="why">Responde “How long is the flight?”, não onde fica o banheiro.</span></span></label>
+<input type="radio" name="q16" id="q161" class="bad"><label for="q161" class="bad"><b>B</b><span><span class="t">Sure! Here you go.</span><span class="why">Serve para entregar algo, por exemplo água ou cobertor.</span></span></label>
+<input type="radio" name="q16" id="q162" class="bad"><label for="q162" class="bad"><b>C</b><span><span class="t">Let me check for you.</span><span class="why">Até pode ser usado, mas a pergunta tem resposta direta: onde fica o banheiro.</span></span></label>
+<input type="radio" name="q16" id="q163" class="ok"><label for="q163" class="ok"><b>D</b><span><span class="t">It’s at the back, on your left.</span><span class="why">Correto: “Fica no fundo, à sua esquerda.” Restroom = banheiro.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto: “Fica no fundo, à sua esquerda.” Restroom = banheiro.<span class="pron">🗣️ Pronúncia: its at dê béck, on iór léft</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>D</b>: “It’s at the back, on your left.”. Correto: “Fica no fundo, à sua esquerda.” Restroom = banheiro.<span class="pron">🗣️ Pronúncia: its at dê béck, on iór léft</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 17 de 20 · Pedidos</div>
+<legend class="q">“Can I have a blanket?” O que o passageiro pediu?</legend>
+<div class="opts">
+<input type="radio" name="q17" id="q170" class="ok"><label for="q170" class="ok"><b>A</b><span><span class="t">Um cobertor</span><span class="why">Correto. Resposta: “Of course! One moment, please.”</span></span></label>
+<input type="radio" name="q17" id="q171" class="bad"><label for="q171" class="bad"><b>B</b><span><span class="t">Um travesseiro</span><span class="why">Travesseiro é “pillow”.</span></span></label>
+<input type="radio" name="q17" id="q172" class="bad"><label for="q172" class="bad"><b>C</b><span><span class="t">Um copo d’água</span><span class="why">Isso seria “Could I have some water?”.</span></span></label>
+<input type="radio" name="q17" id="q173" class="bad"><label for="q173" class="bad"><b>D</b><span><span class="t">Trocar de assento</span><span class="why">Isso é “Can I change my seat?”.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. Resposta: “Of course! One moment, please.”<span class="pron">🗣️ Pronúncia: quén ai rév a blénkit?</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>A</b>: “Um cobertor”. Correto. Resposta: “Of course! One moment, please.”<span class="pron">🗣️ Pronúncia: quén ai rév a blénkit?</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 18 de 20 · Avisos</div>
+<legend class="q">“We are about to land.” Significa:</legend>
+<div class="opts">
+<input type="radio" name="q18" id="q180" class="bad"><label for="q180" class="bad"><b>A</b><span><span class="t">Vamos decolar em breve.</span><span class="why">Decolar é “take off”: “We will take off soon.”.</span></span></label>
+<input type="radio" name="q18" id="q181" class="bad"><label for="q181" class="bad"><b>B</b><span><span class="t">Estamos voando sobre a terra.</span><span class="why">“About to” não é “sobre”. Indica algo que vai acontecer em instantes.</span></span></label>
+<input type="radio" name="q18" id="q182" class="ok"><label for="q182" class="ok"><b>C</b><span><span class="t">Estamos prestes a pousar.</span><span class="why">Correto. “Be about to” = estar prestes a. “Land” = pousar.</span></span></label>
+<input type="radio" name="q18" id="q183" class="bad"><label for="q183" class="bad"><b>D</b><span><span class="t">O voo dura duas horas.</span><span class="why">Isso é “The flight time is two hours.”.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. “Be about to” = estar prestes a. “Land” = pousar.<span class="pron">🗣️ Pronúncia: uí ar abáut tu lénd</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>C</b>: “Estamos prestes a pousar.”. Correto. “Be about to” = estar prestes a. “Land” = pousar.<span class="pron">🗣️ Pronúncia: uí ar abáut tu lénd</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 19 de 20 · Frases educadas</div>
+<legend class="q">Um passageiro esperou muito. O que você diz?</legend>
+<div class="opts">
+<input type="radio" name="q19" id="q190" class="bad"><label for="q190" class="bad"><b>A</b><span><span class="t">Just wait.</span><span class="why">Soa impaciente e rude.</span></span></label>
+<input type="radio" name="q19" id="q191" class="ok"><label for="q191" class="ok"><b>B</b><span><span class="t">Thank you for your patience.</span><span class="why">Correto: “Obrigada pela paciência.” Educado e profissional.</span></span></label>
+<input type="radio" name="q19" id="q192" class="bad"><label for="q192" class="bad"><b>C</b><span><span class="t">Don’t be nervous.</span><span class="why">Não tem relação com a espera, e pode soar como bronca.</span></span></label>
+<input type="radio" name="q19" id="q193" class="bad"><label for="q193" class="bad"><b>D</b><span><span class="t">Is everything OK?</span><span class="why">Pergunta se está tudo bem, mas não agradece a espera.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto: “Obrigada pela paciência.” Educado e profissional.<span class="pron">🗣️ Pronúncia: thênk iu fór iór pêishens</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>B</b>: “Thank you for your patience.”. Correto: “Obrigada pela paciência.” Educado e profissional.<span class="pron">🗣️ Pronúncia: thênk iu fór iór pêishens</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 20 de 20 · Frases educadas</div>
+<legend class="q">Um passageiro está nervoso. Qual frase acalma?</legend>
+<div class="opts">
+<input type="radio" name="q20" id="q200" class="bad"><label for="q200" class="bad"><b>A</b><span><span class="t">Let me check for you.</span><span class="why">Bom para verificar algo, mas não acalma ninguém.</span></span></label>
+<input type="radio" name="q20" id="q201" class="bad"><label for="q201" class="bad"><b>B</b><span><span class="t">The exits are here.</span><span class="why">Pode deixar o passageiro mais nervoso 😅</span></span></label>
+<input type="radio" name="q20" id="q202" class="bad"><label for="q202" class="bad"><b>C</b><span><span class="t">Please take your seats.</span><span class="why">É um aviso geral, não acalma.</span></span></label>
+<input type="radio" name="q20" id="q203" class="ok"><label for="q203" class="ok"><b>D</b><span><span class="t">Don’t worry, everything is fine.</span><span class="why">Correto: “Não se preocupe, está tudo bem.”</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto: “Não se preocupe, está tudo bem.”<span class="pron">🗣️ Pronúncia: dôunt uóri, évrithin is fain</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>D</b>: “Don’t worry, everything is fine.”. Correto: “Não se preocupe, está tudo bem.”<span class="pron">🗣️ Pronúncia: dôunt uóri, évrithin is fain</span></div>
+</fieldset>
 
-<script src="/quiz-k7m2q.js"></script>
+<details>
+<summary>📋 Ver gabarito completo</summary>
+<ol>
+<li><b>1. Como se diz “Bem-vindo a bordo!”?</b><br><span class="ans">✓ A) Welcome aboard!</span><br>Correto. “Aboard” significa “a bordo”. É a frase padrão para receber o passageiro na porta. <i>🗣️ uélcam abórd</i></li>
+<li><b>2. O passageiro diz “Nice to meet you.” O que isso significa?</b><br><span class="ans">✓ C) Prazer em conhecer.</span><br>Correto. Usado quando você conhece alguém pela primeira vez. <i>🗣️ náis tu mít iu</i></li>
+<li><b>3. Qual frase está correta para dizer sua idade?</b><br><span class="ans">✓ B) I’m 25 years old.</span><br>Correto. Em inglês você “é” a idade: I am (I’m) + número + years old. <i>🗣️ áim … iérs ôuld</i></li>
+<li><b>4. Como dizer “Quero trabalhar como comissário(a)”?</b><br><span class="ans">✓ D) I want to work as a flight attendant.</span><br>Correto. want to + verbo, “as” para profissão e o artigo “a” antes da profissão. <i>🗣️ ai uânt tu uârk as a flait atêndant</i></li>
+<li><b>5. Você não entendeu o passageiro. O que dizer?</b><br><span class="ans">✓ A) Could you repeat that?</span><br>Correto e educado: “Pode repetir?”. Também serve “Could you speak more slowly?”. <i>🗣️ cud iu ripít dét?</i></li>
+<li><b>6. Como perguntar “O que significa ‘aisle’?”</b><br><span class="ans">✓ C) What does “aisle” mean?</span><br>Correto: What + does + palavra + mean? <i>🗣️ uót dâz … min?</i></li>
+<li><b>7. Qual é a forma educada de pedir o cartão de embarque?</b><br><span class="ans">✓ B) May I see your boarding pass, please?</span><br>Correto. “May I…?” é a forma mais educada de pedir permissão. <i>🗣️ mei ai si iór bórdin pés, plíz?</i></li>
+<li><b>8. O passageiro entrega o cartão e diz:</b><br><span class="ans">✓ D) Here you go.</span><br>Correto: “Aqui está.” Usado ao entregar algo. “Here you are” também serve. <i>🗣️ ríar iu gôu</i></li>
+<li><b>9. “Your seat is 12A, on the left.” Onde fica o assento?</b><br><span class="ans">✓ A) Fileira 12, assento A, à esquerda.</span><br>Correto. “Left” = esquerda, “right” = direita. <i>🗣️ iór síit is tuélv êi, on dê léft</i></li>
+<li><b>10. Qual é a diferença entre “fifteen” e “fifty”?</b><br><span class="ans">✓ C) Fifteen = 15 (acento no fim) e fifty = 50 (acento no começo).</span><br>Correto: fifTEEN vs FIFty. A sílaba forte muda tudo na hora de dizer o assento. <i>🗣️ fifTÍIN · FÍFti</i></li>
+<li><b>11. “Window or aisle?” O que o passageiro está escolhendo?</b><br><span class="ans">✓ B) Janela ou corredor</span><br>Correto. E atenção: o “s” de “aisle” é mudo: “áil”. <i>🗣️ uíndou or áil?</i></li>
+<li><b>12. Como oferecer algo para beber de forma educada?</b><br><span class="ans">✓ D) Would you like something to drink?</span><br>Correto. “Would you like…?” é a forma educada de oferecer. <i>🗣️ uud iu laik sâmthin tu drínk?</i></li>
+<li><b>13. Você entrega a refeição. O que dizer?</b><br><span class="ans">✓ A) Here you are. Enjoy your meal!</span><br>Correto: “Aqui está. Bom apetite!” <i>🗣️ ríar iu ar. endjói iór míl</i></li>
+<li><b>14. “Please fasten your seatbelt.” O que o passageiro deve fazer?</b><br><span class="ans">✓ C) Afivelar o cinto</span><br>Correto. “Fasten” = afivelar/prender. O “t” é mudo: “fásen”. <i>🗣️ plíz fásen iór síit bélt</i></li>
+<li><b>15. Como dizer “Mantenha a mesinha fechada”?</b><br><span class="ans">✓ B) Please keep your tray table closed.</span><br>Correto. Keep + objeto + closed = “mantenha … fechado”. <i>🗣️ plíz kíp iór trêi têibol clôuzd</i></li>
+<li><b>16. “Where is the restroom?” Qual a melhor resposta?</b><br><span class="ans">✓ D) It’s at the back, on your left.</span><br>Correto: “Fica no fundo, à sua esquerda.” Restroom = banheiro. <i>🗣️ its at dê béck, on iór léft</i></li>
+<li><b>17. “Can I have a blanket?” O que o passageiro pediu?</b><br><span class="ans">✓ A) Um cobertor</span><br>Correto. Resposta: “Of course! One moment, please.” <i>🗣️ quén ai rév a blénkit?</i></li>
+<li><b>18. “We are about to land.” Significa:</b><br><span class="ans">✓ C) Estamos prestes a pousar.</span><br>Correto. “Be about to” = estar prestes a. “Land” = pousar. <i>🗣️ uí ar abáut tu lénd</i></li>
+<li><b>19. Um passageiro esperou muito. O que você diz?</b><br><span class="ans">✓ B) Thank you for your patience.</span><br>Correto: “Obrigada pela paciência.” Educado e profissional. <i>🗣️ thênk iu fór iór pêishens</i></li>
+<li><b>20. Um passageiro está nervoso. Qual frase acalma?</b><br><span class="ans">✓ D) Don’t worry, everything is fine.</span><br>Correto: “Não se preocupe, está tudo bem.” <i>🗣️ dôunt uóri, évrithin is fain</i></li>
+</ol>
+</details>
+<div class="bar"><div class="in"><span class="s"></span><button type="reset">Recomeçar</button></div></div>
+</form>
 </body>
 </html>
