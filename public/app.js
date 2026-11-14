@@ -2,7 +2,7 @@
   'use strict';
 
   var CONFIG = {
-    checkoutUrl: 'https://pay.cakto.com.br/f593h8h_922503',
+    checkoutUrl: 'https://pay.cakto.com.br/dhf6i69_1321811',
     priceLabel: '',
     perPage: 5
   };
