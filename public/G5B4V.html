@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz · Aula 3 · London, here we come!</title>
+<style>
+:root{--bg:#f7f8fb;--card:#fff;--ink:#1b2433;--muted:#5b6577;--blue:#1f5fbf;--soft:#e8eefc;--ok:#1a8f5a;--okbg:#e3f6ec;--bad:#c8372d;--badbg:#fde8e6;--line:#dfe4ee}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);counter-reset:acertos respondidas}
+.wrap{max-width:720px;margin:0 auto;padding:20px 16px 150px}
+h1{font-family:Georgia,serif;font-size:clamp(22px,5vw,30px);margin:0 0 4px}
+.intro{color:var(--muted);margin:0 0 18px}
+.card{background:var(--card);border:0;border-radius:16px;padding:20px;margin:0 0 16px;box-shadow:0 2px 10px rgba(20,30,60,.06);min-width:0}
+.tag{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--blue)}
+.q{font-size:clamp(17px,4vw,21px);font-weight:700;margin:6px 0 14px;padding:0;line-height:1.35;float:left;width:100%}
+.opts{clear:both;display:grid;gap:10px}
+input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+label{position:relative;cursor:pointer;display:flex;gap:12px;align-items:flex-start;padding:14px;border:2px solid var(--line);border-radius:12px;background:#fff;transition:border-color .15s,background .15s,opacity .2s;font-size:16px;line-height:1.35}
+label:hover{border-color:var(--blue);background:var(--soft)}
+label b{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--soft);color:var(--blue);font-size:13px}
+.why{display:none;font-size:14px;color:var(--muted);margin-top:6px}
+.t{display:block}
+input:focus-visible+label{outline:3px solid var(--blue);outline-offset:2px}
+.qq:has(input:checked) label{pointer-events:none}
+.qq:has(input:checked) .why{display:block}
+.qq:has(input:checked) label.bad{opacity:.7}
+.qq:has(input:checked) label.ok{border-color:var(--ok);background:var(--okbg);opacity:1}
+.qq:has(input:checked) label.ok b{background:var(--ok);color:#fff}
+input.bad:checked+label{border-color:var(--bad);background:var(--badbg);opacity:1;animation:shake .45s}
+input.bad:checked+label b{background:var(--bad);color:#fff}
+input.ok:checked+label{animation:pop .5s}
+input.ok:checked+label::after{content:"";position:absolute;left:50%;top:50%;width:8px;height:8px;border-radius:2px;pointer-events:none;
+  animation:boom .9s ease-out forwards;
+  box-shadow:0 0 #1f5fbf,0 0 #1a8f5a,0 0 #f2b705,0 0 #e8505b,0 0 #7b5cd6,0 0 #1f5fbf,0 0 #1a8f5a,0 0 #f2b705,0 0 #e8505b,0 0 #7b5cd6,0 0 #f2b705,0 0 #1f5fbf}
+@keyframes boom{
+  0%{opacity:1}
+  100%{opacity:0;box-shadow:-140px -70px #1f5fbf,140px -60px #1a8f5a,-90px -110px #f2b705,100px -105px #e8505b,-30px -130px #7b5cd6,40px -125px #1f5fbf,-170px -10px #1a8f5a,170px -20px #f2b705,-120px 40px #e8505b,125px 45px #7b5cd6,-60px 60px #f2b705,70px 55px #1f5fbf}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.04)}100%{transform:scale(1)}}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.fb{display:none;margin-top:14px;padding:14px;border-radius:12px;font-size:15px;line-height:1.45;animation:in .3s}
+.fb strong{display:block;font-size:17px;margin-bottom:4px}
+.fb-ok{background:var(--okbg);border-left:5px solid var(--ok)}
+.fb-bad{background:var(--badbg);border-left:5px solid var(--bad)}
+.qq:has(input.ok:checked) .fb-ok{display:block}
+.qq:has(input.bad:checked) .fb-bad{display:block}
+.pron{display:block;margin-top:6px;font-style:italic;color:var(--muted)}
+input.ok:checked{counter-increment:acertos respondidas}
+input.bad:checked{counter-increment:respondidas}
+.bar{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);border-top:1px solid var(--line);padding:12px 16px;z-index:5}
+.bar .in{max-width:720px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.bar .s::after{content:"✅ " counter(acertos) " acertos · " counter(respondidas) "/20 respondidas";font-weight:700;color:var(--blue);font-size:15px}
+button{all:unset;cursor:pointer;background:var(--blue);color:#fff;font-weight:700;padding:10px 16px;border-radius:10px;font-size:14px}
+input.nome{position:static;opacity:1;width:100%;height:auto;pointer-events:auto;flex:1 1 160px;min-width:0;padding:10px 12px;border:2px solid var(--line);border-radius:10px;font:inherit;font-size:16px;color:var(--ink);background:#fff}
+input.nome:focus{outline:none;border-color:var(--blue)}
+.bar .row{width:100%;display:flex;gap:8px;align-items:center}
+.bar .btns{display:flex;gap:8px;flex:none}
+.bar button.send{background:#1a8f5a}
+details{background:var(--card);border-radius:16px;padding:18px 20px;box-shadow:0 2px 10px rgba(20,30,60,.06)}
+summary{cursor:pointer;font-weight:800;font-size:18px;color:var(--blue)}
+details ol{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:10px}
+details li{border:1px solid var(--line);border-left:5px solid var(--ok);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.45}
+.ans{color:var(--ok);font-weight:700}
+@media (max-width:480px){.card{padding:16px}label{padding:12px;font-size:15px}.bar .s::after{font-size:13px}.bar button{padding:10px 12px;font-size:13px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<form class="wrap">
+<h1>Quiz · Aula 3 🚇</h1>
+<p class="intro">Toque na resposta. Você vê na hora se acertou e o porquê de cada alternativa.</p>
+<fieldset class="card qq">
+<div class="tag">Questão 1 de 20 · Revisão da aula 1</div>
+<legend class="q">Como pedir para a pessoa falar mais devagar?</legend>
+<div class="opts">
+<input type="radio" name="q1" id="q10" class="bad"><label for="q10" class="bad"><b>A</b><span><span class="t">Speak slowly you, please.</span><span class="why">Ordem estranha e seca. Pedido educado começa com “Could you…”.</span></span></label>
+<input type="radio" name="q1" id="q11" class="bad"><label for="q11" class="bad"><b>B</b><span><span class="t">Could you speaking more slowly?</span><span class="why">Depois de “could you” o verbo fica na forma base: “speak”, não “speaking”.</span></span></label>
+<input type="radio" name="q1" id="q12" class="ok"><label for="q12" class="ok"><b>C</b><span><span class="t">Could you speak more slowly?</span><span class="why">Correto: “Pode falar mais devagar?” Could you + verbo base é o pedido educado.</span></span></label>
+<input type="radio" name="q1" id="q13" class="bad"><label for="q13" class="bad"><b>D</b><span><span class="t">You can slowly speak?</span><span class="why">Ordem das palavras errada e sem o tom educado do “Could you”.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto: “Pode falar mais devagar?” Could you + verbo base é o pedido educado.<span class="pron">🗣️ Pronúncia: cud iu spik mór slôuli?</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>C</b>: “Could you speak more slowly?”. Correto: “Pode falar mais devagar?” Could you + verbo base é o pedido educado.<span class="pron">🗣️ Pronúncia: cud iu spik mór slôuli?</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 2 de 20 · Revisão da aula 1</div>
+<legend class="q">“How much is it?” O que isso significa?</legend>
+<div class="opts">
+<input type="radio" name="q2" id="q20" class="bad"><label for="q20" class="bad"><b>A</b><span><span class="t">Como você está?</span><span class="why">“Como você está?” é “How are you?”.</span></span></label>
+<input type="radio" name="q2" id="q21" class="ok"><label for="q21" class="ok"><b>B</b><span><span class="t">Quanto custa?</span><span class="why">Correto. Serve em qualquer lugar para perguntar o preço.</span></span></label>
+<input type="radio" name="q2" id="q22" class="bad"><label for="q22" class="bad"><b>C</b><span><span class="t">Quantos anos você tem?</span><span class="why">“Quantos anos você tem?” é “How old are you?”.</span></span></label>
+<input type="radio" name="q2" id="q23" class="bad"><label for="q23" class="bad"><b>D</b><span><span class="t">Quanto tempo demora?</span><span class="why">“Quanto tempo demora?” é “How long does it take?”.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. Serve em qualquer lugar para perguntar o preço.<span class="pron">🗣️ Pronúncia: hau mâtch iz it</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>B</b>: “Quanto custa?”. Correto. Serve em qualquer lugar para perguntar o preço.<span class="pron">🗣️ Pronúncia: hau mâtch iz it</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 3 de 20 · Revisão da aula 1</div>
+<legend class="q">“I’m here on vacation.” Significa:</legend>
+<div class="opts">
+<input type="radio" name="q3" id="q30" class="bad"><label for="q30" class="bad"><b>A</b><span><span class="t">Eu moro aqui.</span><span class="why">“Eu moro aqui” é “I live here.”.</span></span></label>
+<input type="radio" name="q3" id="q31" class="bad"><label for="q31" class="bad"><b>B</b><span><span class="t">Estou aqui a trabalho.</span><span class="why">“A trabalho” é “on business”.</span></span></label>
+<input type="radio" name="q3" id="q32" class="bad"><label for="q32" class="bad"><b>C</b><span><span class="t">Eu tomei vacina.</span><span class="why">Cuidado, falso amigo! “Vacation” é férias. Vacina é “vaccine”.</span></span></label>
+<input type="radio" name="q3" id="q33" class="ok"><label for="q33" class="ok"><b>D</b><span><span class="t">Estou aqui de férias.</span><span class="why">Correto. “On vacation” = de férias.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. “On vacation” = de férias.<span class="pron">🗣️ Pronúncia: áim hir on vakêixan</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>D</b>: “Estou aqui de férias.”. Correto. “On vacation” = de férias.<span class="pron">🗣️ Pronúncia: áim hir on vakêixan</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 4 de 20 · No hotel</div>
+<legend class="q">Você chega ao hotel e quer dizer que tem uma reserva. O que dizer?</legend>
+<div class="opts">
+<input type="radio" name="q4" id="q40" class="bad"><label for="q40" class="bad"><b>A</b><span><span class="t">I am a reservation.</span><span class="why">Significa “eu sou uma reserva”. Para “ter” uma reserva, use “have”.</span></span></label>
+<input type="radio" name="q4" id="q41" class="ok"><label for="q41" class="ok"><b>B</b><span><span class="t">I have a reservation.</span><span class="why">Correto. “Reservation” é o substantivo (a reserva) e “have” é o verbo.</span></span></label>
+<input type="radio" name="q4" id="q42" class="bad"><label for="q42" class="bad"><b>C</b><span><span class="t">I have one reserve.</span><span class="why">“Reserve” é verbo (reservar). A palavra certa é “reservation”.</span></span></label>
+<input type="radio" name="q4" id="q43" class="bad"><label for="q43" class="bad"><b>D</b><span><span class="t">I reserved have.</span><span class="why">Ordem errada e mistura de dois verbos.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. “Reservation” é o substantivo (a reserva) e “have” é o verbo.<span class="pron">🗣️ Pronúncia: ai rév a rezervêixan</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>B</b>: “I have a reservation.”. Correto. “Reservation” é o substantivo (a reserva) e “have” é o verbo.<span class="pron">🗣️ Pronúncia: ai rév a rezervêixan</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 5 de 20 · No hotel</div>
+<legend class="q">“It’s under Silva.” O que isso quer dizer no check-in?</legend>
+<div class="opts">
+<input type="radio" name="q5" id="q50" class="bad"><label for="q50" class="bad"><b>A</b><span><span class="t">Está debaixo do Silva.</span><span class="why">Tradução palavra por palavra. Aqui “under” quer dizer “no nome de”.</span></span></label>
+<input type="radio" name="q5" id="q51" class="bad"><label for="q51" class="bad"><b>B</b><span><span class="t">A reserva foi cancelada.</span><span class="why">Nada a ver. É só a forma de dizer em que nome está a reserva.</span></span></label>
+<input type="radio" name="q5" id="q52" class="ok"><label for="q52" class="ok"><b>C</b><span><span class="t">Está no nome Silva.</span><span class="why">Correto. Na hora, troque “Silva” pelo seu sobrenome.</span></span></label>
+<input type="radio" name="q5" id="q53" class="bad"><label for="q53" class="bad"><b>D</b><span><span class="t">Silva é o recepcionista.</span><span class="why">Não. Quem fala está dando o nome da reserva dele.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. Na hora, troque “Silva” pelo seu sobrenome.<span class="pron">🗣️ Pronúncia: íts ânder sílva</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>C</b>: “Está no nome Silva.”. Correto. Na hora, troque “Silva” pelo seu sobrenome.<span class="pron">🗣️ Pronúncia: íts ânder sílva</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 6 de 20 · No hotel</div>
+<legend class="q">Como perguntar a que horas é o café da manhã?</legend>
+<div class="opts">
+<input type="radio" name="q6" id="q60" class="bad"><label for="q60" class="bad"><b>A</b><span><span class="t">How time is breakfast?</span><span class="why">“How” não serve para horas. Para horário use “What time”.</span></span></label>
+<input type="radio" name="q6" id="q61" class="bad"><label for="q61" class="bad"><b>B</b><span><span class="t">What hour is the breakfast?</span><span class="why">Soa traduzido do português. O natural é “What time is breakfast?”, sem “the”.</span></span></label>
+<input type="radio" name="q6" id="q62" class="bad"><label for="q62" class="bad"><b>C</b><span><span class="t">What time breakfast is?</span><span class="why">A ordem está invertida. Na pergunta o “is” vem antes: “What time is breakfast?”.</span></span></label>
+<input type="radio" name="q6" id="q63" class="ok"><label for="q63" class="ok"><b>D</b><span><span class="t">What time is breakfast?</span><span class="why">Correto. What time + is + a coisa. Funciona para check-out, jantar, voo…</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. What time + is + a coisa. Funciona para check-out, jantar, voo…<span class="pron">🗣️ Pronúncia: uót taim iz brékfast</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>D</b>: “What time is breakfast?”. Correto. What time + is + a coisa. Funciona para check-out, jantar, voo…<span class="pron">🗣️ Pronúncia: uót taim iz brékfast</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 7 de 20 · No hotel</div>
+<legend class="q">Como perguntar se o hotel tem Wi-Fi?</legend>
+<div class="opts">
+<input type="radio" name="q7" id="q70" class="ok"><label for="q70" class="ok"><b>A</b><span><span class="t">Is there Wi-Fi?</span><span class="why">Correto. “Is there…?” = “tem…?”. Serve para Wi-Fi, piscina, elevador.</span></span></label>
+<input type="radio" name="q7" id="q71" class="bad"><label for="q71" class="bad"><b>B</b><span><span class="t">Have Wi-Fi?</span><span class="why">“Have” sozinho não vira “tem” em pergunta. Use “Is there”.</span></span></label>
+<input type="radio" name="q7" id="q72" class="bad"><label for="q72" class="bad"><b>C</b><span><span class="t">Is have Wi-Fi?</span><span class="why">Mistura “is” e “have”. Só um deles, e o certo é “Is there”.</span></span></label>
+<input type="radio" name="q7" id="q73" class="bad"><label for="q73" class="bad"><b>D</b><span><span class="t">Does there Wi-Fi?</span><span class="why">“Does there” não existe. A pergunta é “Is there”.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. “Is there…?” = “tem…?”. Serve para Wi-Fi, piscina, elevador.<span class="pron">🗣️ Pronúncia: iz dér uái-fai</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>A</b>: “Is there Wi-Fi?”. Correto. “Is there…?” = “tem…?”. Serve para Wi-Fi, piscina, elevador.<span class="pron">🗣️ Pronúncia: iz dér uái-fai</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 8 de 20 · No hotel</div>
+<legend class="q">A recepcionista diz “Can I see your passport, please?”. O que você diz ao entregar?</legend>
+<div class="opts">
+<input type="radio" name="q8" id="q80" class="bad"><label for="q80" class="bad"><b>A</b><span><span class="t">You are here.</span><span class="why">Significa “você está aqui”, não é entregar algo.</span></span></label>
+<input type="radio" name="q8" id="q81" class="bad"><label for="q81" class="bad"><b>B</b><span><span class="t">Here is you.</span><span class="why">Gramática errada. Fica estranho em inglês.</span></span></label>
+<input type="radio" name="q8" id="q82" class="ok"><label for="q82" class="ok"><b>C</b><span><span class="t">Here you are.</span><span class="why">Correto: “Aqui está.” Usado ao entregar algo. “Here you go” também serve.</span></span></label>
+<input type="radio" name="q8" id="q83" class="bad"><label for="q83" class="bad"><b>D</b><span><span class="t">I am here.</span><span class="why">“Eu estou aqui”. Não é a frase para entregar um documento.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto: “Aqui está.” Usado ao entregar algo. “Here you go” também serve.<span class="pron">🗣️ Pronúncia: hir iu ar</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>C</b>: “Here you are.”. Correto: “Aqui está.” Usado ao entregar algo. “Here you go” também serve.<span class="pron">🗣️ Pronúncia: hir iu ar</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 9 de 20 · No metrô</div>
+<legend class="q">Em Londres, como as pessoas chamam o metrô?</legend>
+<div class="opts">
+<input type="radio" name="q9" id="q90" class="bad"><label for="q90" class="bad"><b>A</b><span><span class="t">The subway</span><span class="why">Em Londres, “subway” é a passagem subterrânea para pedestres. Metrô como “subway” é inglês americano.</span></span></label>
+<input type="radio" name="q9" id="q91" class="bad"><label for="q91" class="bad"><b>B</b><span><span class="t">The tram</span><span class="why">“Tram” é o bonde.</span></span></label>
+<input type="radio" name="q9" id="q92" class="bad"><label for="q92" class="bad"><b>C</b><span><span class="t">The bus</span><span class="why">“Bus” é ônibus.</span></span></label>
+<input type="radio" name="q9" id="q93" class="ok"><label for="q93" class="ok"><b>D</b><span><span class="t">The Tube</span><span class="why">Correto. Em Londres, metrô é “the Tube”.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. Em Londres, metrô é “the Tube”.<span class="pron">🗣️ Pronúncia: dê tiub</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>D</b>: “The Tube”. Correto. Em Londres, metrô é “the Tube”.<span class="pron">🗣️ Pronúncia: dê tiub</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 10 de 20 · No metrô</div>
+<legend class="q">Você ouve “Mind the gap!” na estação. O que o aviso diz?</legend>
+<div class="opts">
+<input type="radio" name="q10" id="q100" class="ok"><label for="q100" class="ok"><b>A</b><span><span class="t">Cuidado com o vão entre o trem e a plataforma.</span><span class="why">Correto. “Mind” aqui é “prestar atenção/ter cuidado”. Aviso falado em todas as estações.</span></span></label>
+<input type="radio" name="q10" id="q101" class="bad"><label for="q101" class="bad"><b>B</b><span><span class="t">Feche a porta.</span><span class="why">Fechar a porta é “Close the door.”.</span></span></label>
+<input type="radio" name="q10" id="q102" class="bad"><label for="q102" class="bad"><b>C</b><span><span class="t">Fique de pé.</span><span class="why">Ficar de pé é “Stand up.”.</span></span></label>
+<input type="radio" name="q10" id="q103" class="bad"><label for="q103" class="bad"><b>D</b><span><span class="t">Mantenha a mente aberta.</span><span class="why">Tradução literal de “mind”. Aqui ele significa “ter cuidado”.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. “Mind” aqui é “prestar atenção/ter cuidado”. Aviso falado em todas as estações.<span class="pron">🗣️ Pronúncia: maind dê guép</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>A</b>: “Cuidado com o vão entre o trem e a plataforma.”. Correto. “Mind” aqui é “prestar atenção/ter cuidado”. Aviso falado em todas as estações.<span class="pron">🗣️ Pronúncia: maind dê guép</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 11 de 20 · No metrô</div>
+<legend class="q">Como pedir um bilhete para Victoria?</legend>
+<div class="opts">
+<input type="radio" name="q11" id="q110" class="bad"><label for="q110" class="bad"><b>A</b><span><span class="t">Give me ticket Victoria.</span><span class="why">Ordem seca e faltam “a/one” e “to”.</span></span></label>
+<input type="radio" name="q11" id="q111" class="ok"><label for="q111" class="ok"><b>B</b><span><span class="t">One ticket to Victoria, please.</span><span class="why">Correto. One ticket + to + destino + please.</span></span></label>
+<input type="radio" name="q11" id="q112" class="bad"><label for="q112" class="bad"><b>C</b><span><span class="t">I want one ticket Victoria.</span><span class="why">Falta o “to” e o “I want” é direto demais.</span></span></label>
+<input type="radio" name="q11" id="q113" class="bad"><label for="q113" class="bad"><b>D</b><span><span class="t">One ticket for go to Victoria.</span><span class="why">“For go” não existe. É só “to Victoria”.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. One ticket + to + destino + please.<span class="pron">🗣️ Pronúncia: uan tíket tu victória, pliz</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>B</b>: “One ticket to Victoria, please.”. Correto. One ticket + to + destino + please.<span class="pron">🗣️ Pronúncia: uan tíket tu victória, pliz</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 12 de 20 · No metrô</div>
+<legend class="q">Você quer saber se o trem vai para Oxford Circus. O que perguntar?</legend>
+<div class="opts">
+<input type="radio" name="q12" id="q120" class="bad"><label for="q120" class="bad"><b>A</b><span><span class="t">Do this train go to Oxford Circus?</span><span class="why">Com “this train” (it) o auxiliar é “does”, não “do”.</span></span></label>
+<input type="radio" name="q12" id="q121" class="bad"><label for="q121" class="bad"><b>B</b><span><span class="t">Is this train go to Oxford Circus?</span><span class="why">“Is” e “go” não combinam.</span></span></label>
+<input type="radio" name="q12" id="q122" class="ok"><label for="q122" class="ok"><b>C</b><span><span class="t">Does this train go to Oxford Circus?</span><span class="why">Correto. Does + this train + go. O verbo fica na forma base.</span></span></label>
+<input type="radio" name="q12" id="q123" class="bad"><label for="q123" class="bad"><b>D</b><span><span class="t">Does this train goes to Oxford Circus?</span><span class="why">Depois de “does” o verbo volta para a forma base: “go”, sem “s”.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. Does + this train + go. O verbo fica na forma base.<span class="pron">🗣️ Pronúncia: dâz dis trêin gôu tu óxford sârcus</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>C</b>: “Does this train go to Oxford Circus?”. Correto. Does + this train + go. O verbo fica na forma base.<span class="pron">🗣️ Pronúncia: dâz dis trêin gôu tu óxford sârcus</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 13 de 20 · Direções</div>
+<legend class="q">Como dizer “Vire à esquerda e siga em frente”?</legend>
+<div class="opts">
+<input type="radio" name="q13" id="q130" class="bad"><label for="q130" class="bad"><b>A</b><span><span class="t">Turn right, then go straight.</span><span class="why">“Right” é direita. A frase pede esquerda: “left”.</span></span></label>
+<input type="radio" name="q13" id="q131" class="bad"><label for="q131" class="bad"><b>B</b><span><span class="t">Turn left, then stop.</span><span class="why">“Stop” é pare. “Siga em frente” é “go straight”.</span></span></label>
+<input type="radio" name="q13" id="q132" class="bad"><label for="q132" class="bad"><b>C</b><span><span class="t">Turn left, then go back.</span><span class="why">“Go back” é voltar.</span></span></label>
+<input type="radio" name="q13" id="q133" class="ok"><label for="q133" class="ok"><b>D</b><span><span class="t">Turn left, then go straight.</span><span class="why">Correto. Turn left = vire à esquerda; go straight = siga em frente.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. Turn left = vire à esquerda; go straight = siga em frente.<span class="pron">🗣️ Pronúncia: târn léft, dén gôu stréit</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>D</b>: “Turn left, then go straight.”. Correto. Turn left = vire à esquerda; go straight = siga em frente.<span class="pron">🗣️ Pronúncia: târn léft, dén gôu stréit</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 14 de 20 · Direções</div>
+<legend class="q">“It’s next to the bank.” Onde fica o lugar?</legend>
+<div class="opts">
+<input type="radio" name="q14" id="q140" class="bad"><label for="q140" class="bad"><b>A</b><span><span class="t">Em frente ao banco.</span><span class="why">“Em frente a” é “in front of”.</span></span></label>
+<input type="radio" name="q14" id="q141" class="ok"><label for="q141" class="ok"><b>B</b><span><span class="t">Ao lado do banco.</span><span class="why">Correto. “Next to” = ao lado de.</span></span></label>
+<input type="radio" name="q14" id="q142" class="bad"><label for="q142" class="bad"><b>C</b><span><span class="t">Atrás do banco.</span><span class="why">“Atrás de” é “behind”.</span></span></label>
+<input type="radio" name="q14" id="q143" class="bad"><label for="q143" class="bad"><b>D</b><span><span class="t">Dentro do banco.</span><span class="why">“Dentro de” é “inside”.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. “Next to” = ao lado de.<span class="pron">🗣️ Pronúncia: íts nékst tu dê bénk</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>B</b>: “Ao lado do banco.”. Correto. “Next to” = ao lado de.<span class="pron">🗣️ Pronúncia: íts nékst tu dê bénk</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 15 de 20 · Direções</div>
+<legend class="q">“It’s five minutes on foot.” Significa:</legend>
+<div class="opts">
+<input type="radio" name="q15" id="q150" class="bad"><label for="q150" class="bad"><b>A</b><span><span class="t">É a cinco minutos de carro.</span><span class="why">“De carro” é “by car”.</span></span></label>
+<input type="radio" name="q15" id="q151" class="bad"><label for="q151" class="bad"><b>B</b><span><span class="t">É a cinco minutos de metrô.</span><span class="why">“De metrô” é “by Tube”.</span></span></label>
+<input type="radio" name="q15" id="q152" class="ok"><label for="q152" class="ok"><b>C</b><span><span class="t">É a cinco minutos a pé.</span><span class="why">Correto. “On foot” = a pé.</span></span></label>
+<input type="radio" name="q15" id="q153" class="bad"><label for="q153" class="bad"><b>D</b><span><span class="t">São cinco minutos em pé.</span><span class="why">Falso amigo! “On foot” é a pé, não “em pé”. Em pé seria “standing”.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. “On foot” = a pé.<span class="pron">🗣️ Pronúncia: íts fáiv mínits on fut</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>C</b>: “É a cinco minutos a pé.”. Correto. “On foot” = a pé.<span class="pron">🗣️ Pronúncia: íts fáiv mínits on fut</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 16 de 20 · Direções</div>
+<legend class="q">Como perguntar a um desconhecido como chegar ao Big Ben?</legend>
+<div class="opts">
+<input type="radio" name="q16" id="q160" class="bad"><label for="q160" class="bad"><b>A</b><span><span class="t">Excuse me, how I go to Big Ben?</span><span class="why">Falta o auxiliar “do”: “how do I…”. E “get to” é o mais natural.</span></span></label>
+<input type="radio" name="q16" id="q161" class="ok"><label for="q161" class="ok"><b>B</b><span><span class="t">Excuse me, how do I get to Big Ben?</span><span class="why">Correto. Excuse me abre a conversa e “how do I get to…?” é a pergunta padrão.</span></span></label>
+<input type="radio" name="q16" id="q162" class="bad"><label for="q162" class="bad"><b>C</b><span><span class="t">Excuse me, how do I going to Big Ben?</span><span class="why">Depois de “do I” o verbo fica na forma base: “get”.</span></span></label>
+<input type="radio" name="q16" id="q163" class="bad"><label for="q163" class="bad"><b>D</b><span><span class="t">Excuse me, what is the way Big Ben?</span><span class="why">Frase traduzida e incompleta. Fica sem sentido em inglês.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. Excuse me abre a conversa e “how do I get to…?” é a pergunta padrão.<span class="pron">🗣️ Pronúncia: ekskiús mi, hau du ai guét tu big bén?</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>B</b>: “Excuse me, how do I get to Big Ben?”. Correto. Excuse me abre a conversa e “how do I get to…?” é a pergunta padrão.<span class="pron">🗣️ Pronúncia: ekskiús mi, hau du ai guét tu big bén?</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 17 de 20 · No restaurante</div>
+<legend class="q">Como pedir uma mesa para duas pessoas?</legend>
+<div class="opts">
+<input type="radio" name="q17" id="q170" class="bad"><label for="q170" class="bad"><b>A</b><span><span class="t">Table two persons, please.</span><span class="why">Faltam as palavras de ligação. Em inglês: “A table for two”.</span></span></label>
+<input type="radio" name="q17" id="q171" class="bad"><label for="q171" class="bad"><b>B</b><span><span class="t">One table to two, please.</span><span class="why">“To” não é a preposição certa aqui. O natural é “for”.</span></span></label>
+<input type="radio" name="q17" id="q172" class="ok"><label for="q172" class="ok"><b>C</b><span><span class="t">A table for two, please.</span><span class="why">Correto. A table + for + número. Funciona para qualquer quantidade de pessoas.</span></span></label>
+<input type="radio" name="q17" id="q173" class="bad"><label for="q173" class="bad"><b>D</b><span><span class="t">I want table two.</span><span class="why">Direto demais e incompleto. Peça com “A table for two, please.”.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. A table + for + número. Funciona para qualquer quantidade de pessoas.<span class="pron">🗣️ Pronúncia: a têibol fór tu, pliz</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>C</b>: “A table for two, please.”. Correto. A table + for + número. Funciona para qualquer quantidade de pessoas.<span class="pron">🗣️ Pronúncia: a têibol fór tu, pliz</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 18 de 20 · No restaurante</div>
+<legend class="q">Qual é a forma mais educada de pedir um prato?</legend>
+<div class="opts">
+<input type="radio" name="q18" id="q180" class="bad"><label for="q180" class="bad"><b>A</b><span><span class="t">I want fish and chips.</span><span class="why">Está certo, mas direto demais para restaurante.</span></span></label>
+<input type="radio" name="q18" id="q181" class="bad"><label for="q181" class="bad"><b>B</b><span><span class="t">Give me fish and chips.</span><span class="why">Ordem seca, soa mandão.</span></span></label>
+<input type="radio" name="q18" id="q182" class="bad"><label for="q182" class="bad"><b>C</b><span><span class="t">Fish and chips, now.</span><span class="why">Rude. Evite “now” com o garçom.</span></span></label>
+<input type="radio" name="q18" id="q183" class="ok"><label for="q183" class="ok"><b>D</b><span><span class="t">I’d like fish and chips.</span><span class="why">Correto. “I’d like…” = “eu queria…”, a forma educada de pedir.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. “I’d like…” = “eu queria…”, a forma educada de pedir.<span class="pron">🗣️ Pronúncia: aid laik físh énd tchíps</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>D</b>: “I’d like fish and chips.”. Correto. “I’d like…” = “eu queria…”, a forma educada de pedir.<span class="pron">🗣️ Pronúncia: aid laik físh énd tchíps</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 19 de 20 · No restaurante</div>
+<legend class="q">Você não gosta de comida picante. O que perguntar ao garçom?</legend>
+<div class="opts">
+<input type="radio" name="q19" id="q190" class="bad"><label for="q190" class="bad"><b>A</b><span><span class="t">Is it expensive?</span><span class="why">“Expensive” é caro.</span></span></label>
+<input type="radio" name="q19" id="q191" class="ok"><label for="q191" class="ok"><b>B</b><span><span class="t">Is it spicy?</span><span class="why">Correto. “Spicy” = apimentado. Ótimo para evitar surpresas.</span></span></label>
+<input type="radio" name="q19" id="q192" class="bad"><label for="q192" class="bad"><b>C</b><span><span class="t">Is it fresh?</span><span class="why">“Fresh” é fresco.</span></span></label>
+<input type="radio" name="q19" id="q193" class="bad"><label for="q193" class="bad"><b>D</b><span><span class="t">Is it big?</span><span class="why">“Big” é grande.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. “Spicy” = apimentado. Ótimo para evitar surpresas.<span class="pron">🗣️ Pronúncia: iz it spáici</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>B</b>: “Is it spicy?”. Correto. “Spicy” = apimentado. Ótimo para evitar surpresas.<span class="pron">🗣️ Pronúncia: iz it spáici</span></div>
+</fieldset>
+<fieldset class="card qq">
+<div class="tag">Questão 20 de 20 · No restaurante</div>
+<legend class="q">Em Londres, como você pede a conta?</legend>
+<div class="opts">
+<input type="radio" name="q20" id="q200" class="bad"><label for="q200" class="bad"><b>A</b><span><span class="t">Could I have the check, please?</span><span class="why">“The check” é a palavra americana. Em Londres se diz “the bill”.</span></span></label>
+<input type="radio" name="q20" id="q201" class="bad"><label for="q201" class="bad"><b>B</b><span><span class="t">Give me the account, please.</span><span class="why">“Account” é conta bancária. A conta do restaurante é “bill”.</span></span></label>
+<input type="radio" name="q20" id="q202" class="bad"><label for="q202" class="bad"><b>C</b><span><span class="t">I want pay now.</span><span class="why">Falta o “to” e soa grosseiro.</span></span></label>
+<input type="radio" name="q20" id="q203" class="ok"><label for="q203" class="ok"><b>D</b><span><span class="t">Could I have the bill, please?</span><span class="why">Correto. “The bill” é a conta em Londres. “Could I have…?” é bem educado.</span></span></label>
+</div>
+<div class="fb fb-ok"><strong>✅ Acertou!</strong>Correto. “The bill” é a conta em Londres. “Could I have…?” é bem educado.<span class="pron">🗣️ Pronúncia: cud ai rév dê bil, pliz</span></div>
+<div class="fb fb-bad"><strong>❌ Errou!</strong>A certa é <b>D</b>: “Could I have the bill, please?”. Correto. “The bill” é a conta em Londres. “Could I have…?” é bem educado.<span class="pron">🗣️ Pronúncia: cud ai rév dê bil, pliz</span></div>
+</fieldset>
+
+<details>
+<summary>📋 Ver gabarito completo</summary>
+<ol>
+<li><b>1. Como pedir para a pessoa falar mais devagar?</b><br><span class="ans">✓ C) Could you speak more slowly?</span><br>Correto: “Pode falar mais devagar?” Could you + verbo base é o pedido educado. <i>🗣️ cud iu spik mór slôuli?</i></li>
+<li><b>2. “How much is it?” O que isso significa?</b><br><span class="ans">✓ B) Quanto custa?</span><br>Correto. Serve em qualquer lugar para perguntar o preço. <i>🗣️ hau mâtch iz it</i></li>
+<li><b>3. “I’m here on vacation.” Significa:</b><br><span class="ans">✓ D) Estou aqui de férias.</span><br>Correto. “On vacation” = de férias. <i>🗣️ áim hir on vakêixan</i></li>
+<li><b>4. Você chega ao hotel e quer dizer que tem uma reserva. O que dizer?</b><br><span class="ans">✓ B) I have a reservation.</span><br>Correto. “Reservation” é o substantivo (a reserva) e “have” é o verbo. <i>🗣️ ai rév a rezervêixan</i></li>
+<li><b>5. “It’s under Silva.” O que isso quer dizer no check-in?</b><br><span class="ans">✓ C) Está no nome Silva.</span><br>Correto. Na hora, troque “Silva” pelo seu sobrenome. <i>🗣️ íts ânder sílva</i></li>
+<li><b>6. Como perguntar a que horas é o café da manhã?</b><br><span class="ans">✓ D) What time is breakfast?</span><br>Correto. What time + is + a coisa. Funciona para check-out, jantar, voo… <i>🗣️ uót taim iz brékfast</i></li>
+<li><b>7. Como perguntar se o hotel tem Wi-Fi?</b><br><span class="ans">✓ A) Is there Wi-Fi?</span><br>Correto. “Is there…?” = “tem…?”. Serve para Wi-Fi, piscina, elevador. <i>🗣️ iz dér uái-fai</i></li>
+<li><b>8. A recepcionista diz “Can I see your passport, please?”. O que você diz ao entregar?</b><br><span class="ans">✓ C) Here you are.</span><br>Correto: “Aqui está.” Usado ao entregar algo. “Here you go” também serve. <i>🗣️ hir iu ar</i></li>
+<li><b>9. Em Londres, como as pessoas chamam o metrô?</b><br><span class="ans">✓ D) The Tube</span><br>Correto. Em Londres, metrô é “the Tube”. <i>🗣️ dê tiub</i></li>
+<li><b>10. Você ouve “Mind the gap!” na estação. O que o aviso diz?</b><br><span class="ans">✓ A) Cuidado com o vão entre o trem e a plataforma.</span><br>Correto. “Mind” aqui é “prestar atenção/ter cuidado”. Aviso falado em todas as estações. <i>🗣️ maind dê guép</i></li>
+<li><b>11. Como pedir um bilhete para Victoria?</b><br><span class="ans">✓ B) One ticket to Victoria, please.</span><br>Correto. One ticket + to + destino + please. <i>🗣️ uan tíket tu victória, pliz</i></li>
+<li><b>12. Você quer saber se o trem vai para Oxford Circus. O que perguntar?</b><br><span class="ans">✓ C) Does this train go to Oxford Circus?</span><br>Correto. Does + this train + go. O verbo fica na forma base. <i>🗣️ dâz dis trêin gôu tu óxford sârcus</i></li>
+<li><b>13. Como dizer “Vire à esquerda e siga em frente”?</b><br><span class="ans">✓ D) Turn left, then go straight.</span><br>Correto. Turn left = vire à esquerda; go straight = siga em frente. <i>🗣️ târn léft, dén gôu stréit</i></li>
+<li><b>14. “It’s next to the bank.” Onde fica o lugar?</b><br><span class="ans">✓ B) Ao lado do banco.</span><br>Correto. “Next to” = ao lado de. <i>🗣️ íts nékst tu dê bénk</i></li>
+<li><b>15. “It’s five minutes on foot.” Significa:</b><br><span class="ans">✓ C) É a cinco minutos a pé.</span><br>Correto. “On foot” = a pé. <i>🗣️ íts fáiv mínits on fut</i></li>
+<li><b>16. Como perguntar a um desconhecido como chegar ao Big Ben?</b><br><span class="ans">✓ B) Excuse me, how do I get to Big Ben?</span><br>Correto. Excuse me abre a conversa e “how do I get to…?” é a pergunta padrão. <i>🗣️ ekskiús mi, hau du ai guét tu big bén?</i></li>
+<li><b>17. Como pedir uma mesa para duas pessoas?</b><br><span class="ans">✓ C) A table for two, please.</span><br>Correto. A table + for + número. Funciona para qualquer quantidade de pessoas. <i>🗣️ a têibol fór tu, pliz</i></li>
+<li><b>18. Qual é a forma mais educada de pedir um prato?</b><br><span class="ans">✓ D) I’d like fish and chips.</span><br>Correto. “I’d like…” = “eu queria…”, a forma educada de pedir. <i>🗣️ aid laik físh énd tchíps</i></li>
+<li><b>19. Você não gosta de comida picante. O que perguntar ao garçom?</b><br><span class="ans">✓ B) Is it spicy?</span><br>Correto. “Spicy” = apimentado. Ótimo para evitar surpresas. <i>🗣️ iz it spáici</i></li>
+<li><b>20. Em Londres, como você pede a conta?</b><br><span class="ans">✓ D) Could I have the bill, please?</span><br>Correto. “The bill” é a conta em Londres. “Could I have…?” é bem educado. <i>🗣️ cud ai rév dê bil, pliz</i></li>
+</ol>
+</details>
+<div class="bar"><div class="in"><span class="s"></span>
+<div class="row"><input type="text" id="nome" class="nome" placeholder="Seu nome" autocomplete="name" maxlength="60"><span class="btns"><button type="button" class="send" id="send">📲 Enviar ao professor</button><button type="reset">Recomeçar</button></span></div>
+</div></div>
+</form>
+<script>
+document.querySelector('form').addEventListener('submit',function(e){e.preventDefault()});
+document.getElementById('send').addEventListener('click',function(){
+  var nome=document.getElementById('nome').value.trim();
+  if(!nome){var c=document.getElementById('nome');c.focus();c.placeholder='Escreva seu nome primeiro';return}
+  var linhas=[],acertos=0,feitas=0;
+  for(var n=1;n<=20;n++){
+    var marcada=document.querySelector('input[name="q'+n+'"]:checked');
+    if(!marcada){linhas.push(n+') — sem resposta');continue}
+    feitas++;
+    var letra=marcada.nextElementSibling.querySelector('b').textContent;
+    if(marcada.classList.contains('ok')){acertos++;linhas.push(n+') ✅ '+letra)}
+    else{
+      var certa=document.querySelector('input[name="q'+n+'"].ok').nextElementSibling.querySelector('b').textContent;
+      linhas.push(n+') ❌ '+letra+' (certa: '+certa+')');
+    }
+  }
+  var msg='Quiz Aula 3 · London · '+nome+'\nResultado: '+acertos+'/20 acertos'+(feitas<20?' ('+(20-feitas)+' sem resposta)':'')+'\n\n'+linhas.join('\n');
+  location.href='https://wa.me/5512982294991?text='+encodeURIComponent(msg);
+});
+</script>
+</body>
+</html>
