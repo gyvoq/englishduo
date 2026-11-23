@@ -410,7 +410,22 @@ details li{border:1px solid var(--line);border-left:5px solid var(--ok);border-r
     resumo.value=msg;
     wa.href=url;
     okmsg.textContent='';
-    modal.classList.add('on');
+    var saiu=false;
+    function marca(){if(document.visibilityState==='hidden')saiu=true}
+    document.addEventListener('visibilitychange',marca);
+    window.addEventListener('pagehide',function(){saiu=true},{once:true});
+    // abre direto no WhatsApp
+    var a=document.createElement('a');
+    a.href=url;a.target='_blank';a.rel='noopener noreferrer';
+    a.style.display='none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    // se nada aconteceu (navegador bloqueou), mostra a janelinha de reserva
+    setTimeout(function(){
+      document.removeEventListener('visibilitychange',marca);
+      if(!saiu)modal.classList.add('on');
+    },1800);
   });
 
   document.getElementById('copiar').addEventListener('click',function(){copiar(resumo.value)});
