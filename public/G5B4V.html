@@ -64,6 +64,16 @@ details li{border:1px solid var(--line);border-left:5px solid var(--ok);border-r
 .ans{color:var(--ok);font-weight:700}
 @media (max-width:480px){.card{padding:16px}label{padding:12px;font-size:15px}.bar .s::after{font-size:13px}.bar button{padding:10px 12px;font-size:13px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.res{position:fixed;inset:0;background:rgba(10,20,40,.6);z-index:20;display:flex;align-items:center;justify-content:center;padding:16px}
+.res[hidden]{display:none}
+.box{background:#fff;border-radius:16px;padding:18px;max-width:520px;width:100%;max-height:90vh;overflow:auto}
+.box h2{margin:0 0 6px;font-size:20px}
+.box p{margin:0 0 10px;color:var(--muted);font-size:14px;line-height:1.4}
+.box textarea{width:100%;font:inherit;font-size:14px;border:2px solid var(--line);border-radius:10px;padding:10px;color:var(--ink)}
+.ra{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btn{background:#1a8f5a;color:#fff;font-weight:700;padding:10px 16px;border-radius:10px;font-size:14px;text-decoration:none;cursor:pointer}
+.gray{background:#5b6577}
 </style>
 </head>
 <body>
@@ -342,49 +352,43 @@ details li{border:1px solid var(--line);border-left:5px solid var(--ok);border-r
 </form>
 <script>
 document.querySelector('form').addEventListener('submit',function(e){e.preventDefault()});
-document.getElementById('send').addEventListener('click',function(){
-  var campo=document.getElementById('nome');
-  var nome=campo.value.trim();
+var $=function(i){return document.getElementById(i)};
+$('send').addEventListener('click',function(){
+  var campo=$('nome'),nome=campo.value.trim();
   if(!nome){campo.focus();campo.placeholder='Escreva seu nome primeiro';return}
   var linhas=[],acertos=0,feitas=0;
   for(var n=1;n<=20;n++){
-    var marcada=document.querySelector('input[name="q'+n+'"]:checked');
-    if(!marcada){linhas.push(n+') — sem resposta');continue}
+    var m=document.querySelector('input[name="q'+n+'"]:checked');
+    if(!m){linhas.push(n+') — sem resposta');continue}
     feitas++;
-    var letra=marcada.nextElementSibling.querySelector('b').textContent;
-    if(marcada.classList.contains('ok')){acertos++;linhas.push(n+') ✅ '+letra)}
+    var letra=m.nextElementSibling.querySelector('b').textContent;
+    if(m.classList.contains('ok')){acertos++;linhas.push(n+') ✅ '+letra)}
     else{
       var certa=document.querySelector('input[name="q'+n+'"].ok').nextElementSibling.querySelector('b').textContent;
       linhas.push(n+') ❌ '+letra+' (certa: '+certa+')');
     }
   }
   var msg='Quiz Aula 3 · London · '+nome+'\nResultado: '+acertos+'/20 acertos'+(feitas<20?' ('+(20-feitas)+' sem resposta)':'')+'\n\n'+linhas.join('\n');
-  var url='https://wa.me/5512982294991?text='+encodeURIComponent(msg);
-
-  // 1) tenta abrir em nova aba
-  var w=null;
-  try{w=window.open(url,'_blank','noopener')}catch(e){}
-
-  // 2) plano B: copia o resultado e avisa
-  if(!w){
-    var copiado=false;
-    try{
-      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(msg);copiado=true}
-    }catch(e){}
-    if(!copiado){
-      try{
-        var ta=document.createElement('textarea');
-        ta.value=msg;ta.style.position='fixed';ta.style.opacity='0';
-        document.body.appendChild(ta);ta.select();
-        copiado=document.execCommand('copy');
-        document.body.removeChild(ta);
-      }catch(e){}
-    }
-    alert(copiado
-      ? 'Não consegui abrir o WhatsApp daqui, mas copiei seu resultado. Abra o WhatsApp do professor e cole a mensagem.'
-      : 'Não consegui abrir o WhatsApp daqui. Tire um print da tela com seu resultado e envie ao professor.');
-  }
+  $('rt').textContent='Resultado: '+acertos+'/20 acertos';
+  $('rm').value=msg;
+  $('rw').href='https://wa.me/5512982294991?text='+encodeURIComponent(msg);
+  $('rc').textContent='📋 Copiar';
+  $('res').hidden=false;
 });
+$('rc').addEventListener('click',function(){
+  var ta=$('rm'),btn=this,ok=false;
+  ta.focus();ta.select();ta.setSelectionRange(0,99999);
+  try{ok=document.execCommand('copy')}catch(e){}
+  if(!ok&&navigator.clipboard){navigator.clipboard.writeText(ta.value).then(function(){btn.textContent='✅ Copiado'},function(){btn.textContent='Selecionado: copie manualmente'});return}
+  btn.textContent=ok?'✅ Copiado':'Selecionado: copie manualmente';
+});
+$('rx').addEventListener('click',function(){$('res').hidden=true});
 </script>
+<div id="res" class="res" hidden><div class="box">
+<h2 id="rt"></h2>
+<p>Toque em <b>Abrir WhatsApp</b>. Se não abrir, toque em <b>Copiar</b> e cole a mensagem no WhatsApp do professor.</p>
+<textarea id="rm" readonly rows="9"></textarea>
+<div class="ra"><a id="rw" class="btn" href="#" target="_blank" rel="noopener">📲 Abrir WhatsApp</a><button type="button" id="rc">📋 Copiar</button><button type="button" class="gray" id="rx">Fechar</button></div>
+</div></div>
 </body>
 </html>
