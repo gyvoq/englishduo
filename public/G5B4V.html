@@ -350,6 +350,12 @@ details li{border:1px solid var(--line);border-left:5px solid var(--ok);border-r
 <div class="row"><input type="text" id="nome" class="nome" placeholder="Seu nome" autocomplete="name" maxlength="60"><span class="btns"><button type="button" class="send" id="send">📲 Enviar ao professor</button><button type="reset">Recomeçar</button></span></div>
 </div></div>
 </form>
+<div id="res" class="res" hidden><div class="box">
+<h2 id="rt"></h2>
+<p>Toque em <b>Abrir WhatsApp</b>. Se não abrir, toque em <b>Copiar</b> e cole a mensagem no WhatsApp do professor.</p>
+<textarea id="rm" readonly rows="9"></textarea>
+<div class="ra"><a id="rw" class="btn" href="#" target="_blank" rel="noopener">📲 Abrir WhatsApp</a><button type="button" id="rc">📋 Copiar</button><button type="button" class="gray" id="rx">Fechar</button></div>
+</div></div>
 <script>
 document.querySelector('form').addEventListener('submit',function(e){e.preventDefault()});
 var $=function(i){return document.getElementById(i)};
@@ -384,11 +390,5 @@ $('rc').addEventListener('click',function(){
 });
 $('rx').addEventListener('click',function(){$('res').hidden=true});
 </script>
-<div id="res" class="res" hidden><div class="box">
-<h2 id="rt"></h2>
-<p>Toque em <b>Abrir WhatsApp</b>. Se não abrir, toque em <b>Copiar</b> e cole a mensagem no WhatsApp do professor.</p>
-<textarea id="rm" readonly rows="9"></textarea>
-<div class="ra"><a id="rw" class="btn" href="#" target="_blank" rel="noopener">📲 Abrir WhatsApp</a><button type="button" id="rc">📋 Copiar</button><button type="button" class="gray" id="rx">Fechar</button></div>
-</div></div>
 </body>
 </html>
