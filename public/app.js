@@ -975,7 +975,7 @@
       '<li><span class="perk-ico">' + icon('chat-circle-dots') + '</span><span>Chat de dúvidas em cada aula</span></li></ul>' +
       (CONFIG.priceLabel ? '<p class="price">' + esc(CONFIG.priceLabel) + '</p>' : '') +
       '<a class="btn btn-red btn-block" id="payGo" data-autofocus href="' + esc(CONFIG.checkoutUrl) + '" target="_blank" rel="noopener noreferrer">Liberar acesso completo agora' + icon('arrow-up-right') + '</a>' +
-      '<p class="fine">Pagamento único e seguro. A chave de acesso chega no seu e-mail.</p>' +
+      '<p class="fine">Pagamento único e seguro. Depois de pagar, você vê sua chave de acesso na hora.</p>' +
       '<div class="redeem"><label for="codeInput">Já pagou? Entre com sua chave</label>' +
       '<p class="help" id="codeHelp">Confira seu e-mail (e a caixa de spam).</p>' +
       '<div class="redeem-row"><input id="codeInput" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ED-XXXX-XXXX-XXXX" aria-describedby="codeHelp codeErr" value="' + esc(preKey) + '">' +
