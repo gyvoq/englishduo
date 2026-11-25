@@ -1,7 +1,9 @@
-// Webhook da Cakto: gera uma chave por compra e manda por e-mail.
-// Variáveis na Vercel: CAKTO_WEBHOOK_SECRET, RESEND_API_KEY, EMAIL_FROM
+// Webhook da Cakto: gera uma chave por compra. O cliente pega o código na página /obrigado com e-mail + CPF.
+// Variável na Vercel: CAKTO_WEBHOOK_SECRET
 // Opcionais: KEY_MONTHS (padrão 12), KEY_DEVICES (padrão 1)
-import { redis } from '../lib/redis.js';
+import { createHash } from 'node:crypto';
+import { redis, rateLimit } from '../lib/redis.js';
+import { clientIp } from '../lib/http.js';
 import { safeEqual } from '../lib/session.js';
 import { genKey, createLicense, getLicense, saveLicense } from '../lib/licenses.js';
 import { logEvent } from '../lib/logs.js';
@@ -21,31 +23,29 @@ async function readBody(req) {
   try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { return null; }
 }
 
-const esc = (s) => String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const digits = (s) => String(s || '').replace(/\D/g, '');
+const buyerKey = (email, cpf) => 'buyer:' + createHash('sha256').update(String(email).trim().toLowerCase() + '|' + digits(cpf)).digest('hex');
 
-async function sendKey(to, name, key) {
-  const first = String(name || '').trim().split(/\s+/)[0] || '';
-  const r = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: 'Bearer ' + process.env.RESEND_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: process.env.EMAIL_FROM,
-      to: [to],
-      subject: 'Seu código de acesso EnglishDuo',
-      html: '<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;text-align:center">' +
-        '<h2>Obrigado pela compra' + (first ? ', ' + esc(first) : '') + '!</h2>' +
-        '<p>Seu código de acesso:</p>' +
-        '<p style="font-size:24px;font-weight:bold;color:#D7191F;letter-spacing:1px">' + key + '</p>' +
-        '<p><a href="https://englishduo.vercel.app/?chave=' + key + '" style="display:inline-block;background:#D7191F;color:#fff;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold">Entrar agora</a></p>' +
-        '<p style="color:#777;font-size:13px">Guarde este e-mail. O código é pessoal.</p></div>'
-    })
-  });
-  if (!r.ok) throw new Error('E-mail falhou: ' + r.status + ' ' + (await r.text().catch(() => '')));
+// A página de obrigado pergunta e-mail + CPF e recebe o código.
+async function claim(req, res) {
+  const o = req.headers.origin;
+  if (o) { try { if (new URL(o).host !== req.headers.host) return reply(res, 403, { error: 'Origem inválida.' }); } catch { return reply(res, 403, { error: 'Origem inválida.' }); } }
+  if (!(await rateLimit('claim:' + clientIp(req), 10, 600))) return reply(res, 429, { error: 'Muitas tentativas. Espere alguns minutos.' });
+  const b = (await readBody(req)) || {};
+  const email = String(b.email || '').trim().toLowerCase();
+  const cpf = digits(b.cpf);
+  if (!email.includes('@') || cpf.length < 11) return reply(res, 400, { error: 'Digite o e-mail e o CPF usados na compra.' });
+  const key = await redis('GET', buyerKey(email, cpf));
+  if (!key) return reply(res, 404, { error: 'Compra não encontrada ainda. Se acabou de pagar, espere 1 minuto e tente de novo. Pix e boleto só liberam depois de compensar.' });
+  const l = await getLicense(key);
+  if (!l || l.revoked) return reply(res, 403, { error: 'Esta compra foi cancelada ou reembolsada.' });
+  reply(res, 200, { key });
 }
 
 export default async function handler(req, res) {
   try {
     if (req.method !== 'POST') return reply(res, 405, { error: 'method' });
+    if (req.query && req.query.claim) return claim(req, res);
     const secret = process.env.CAKTO_WEBHOOK_SECRET || '';
     const b = await readBody(req);
     if (!secret || !b || !safeEqual(String(b.secret || ''), secret)) return reply(res, 401, { error: 'secret' });
@@ -71,16 +71,13 @@ export default async function handler(req, res) {
           if (await createLicense(l)) lic = l;
         }
         if (!lic) throw new Error('Não gerou chave');
-        rec = { key: lic.key, email, name: main.customer?.name || '', sent: false };
+        rec = { key: lic.key, email, name: main.customer?.name || '' };
         // NX: se a Cakto mandar duas vezes ao mesmo tempo, só uma chave vale
         const set = await redis('SET', ok, JSON.stringify(rec), 'NX');
         if (set !== 'OK') rec = JSON.parse(await redis('GET', ok));
       }
-      if (!rec.sent) {
-        await sendKey(rec.email, rec.name, rec.key); // se falhar, responde 500 e a Cakto tenta de novo
-        rec.sent = true;
-        await redis('SET', ok, JSON.stringify(rec));
-      }
+      const cpf = digits(main.customer?.docNumber);
+      if (cpf) await redis('SET', buyerKey(rec.email, cpf), rec.key);
       return reply(res, 200, { ok: true });
     }
 
