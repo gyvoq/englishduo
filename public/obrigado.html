@@ -33,30 +33,8 @@ p{margin:0 0 24px;color:var(--ink-2)}
 <div class="logo">E</div>
 <span class="ok">Pagamento confirmado</span>
 <h1>Obrigado pela compra!</h1>
-<p>Seu acesso está liberado. Use o código abaixo para entrar.</p>
-<div class="box">
-<div class="label">Seu código de acesso</div>
-<div class="code" id="code">ED-7Q9U-TKLB-2XND</div>
-</div>
-<button type="button" class="btn btn-line" id="copy">Copiar código</button>
-<a class="btn btn-red" href="/?chave=ED-7Q9U-TKLB-2XND">Entrar agora</a>
+<p>Enviamos seu código de acesso para o <b>e-mail da compra</b>. Pode levar alguns minutos; confira também o spam e a aba Promoções.</p>
+<a class="btn btn-red" href="/">Ir para o EnglishDuo</a>
 </main>
-<script>
-(function () {
-  var b = document.getElementById('copy');
-  var t = document.getElementById('code').textContent;
-  b.addEventListener('click', function () {
-    function ok() { b.textContent = 'Copiado!'; setTimeout(function () { b.textContent = 'Copiar código'; }, 2000); }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(t).then(ok, function () {});
-    } else {
-      var r = document.createRange();
-      r.selectNodeContents(document.getElementById('code'));
-      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
-      try { document.execCommand('copy'); ok(); } catch (e) {}
-    }
-  });
-})();
-</script>
 </body>
 </html>
